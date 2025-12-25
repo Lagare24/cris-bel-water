@@ -1,5 +1,6 @@
 using WaterRefill.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using WaterRefill.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,7 @@ builder.Services.AddDbContext<WaterRefillContext>(options =>
 
 // Add services
 builder.Services.AddControllers();
+builder.Services.AddScoped<InvoicePdfService>();
 var app = builder.Build();
 
 app.MapControllers();
