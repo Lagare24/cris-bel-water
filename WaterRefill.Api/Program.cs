@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WaterRefill.Api.Data;
 using WaterRefill.Api.Services;
+using System.Security.Claims;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,34 @@ builder.Services.AddDbContext<WaterRefillContext>(options =>
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddScoped<InvoicePdfService>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "WaterRefill API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. Example: 'Authorization: Bearer {token}'"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -38,7 +68,8 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = issuer,
         ValidAudience = audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-        ClockSkew = TimeSpan.FromMinutes(1)
+        ClockSkew = TimeSpan.FromMinutes(1),
+        RoleClaimType = ClaimTypes.Role
     };
 });
 builder.Services.AddAuthorization();
@@ -46,5 +77,8 @@ var app = builder.Build();
 
 app.UseAuthentication();
 app.UseAuthorization();
+// Swagger (still available; secure endpoints require bearer token when invoked)
+app.UseSwagger();
+app.UseSwaggerUI();
 app.MapControllers();
 app.Run();

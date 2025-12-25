@@ -6,7 +6,7 @@ using WaterRefill.Api.Models;
 
 namespace WaterRefill.Api.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Staff")]
     [ApiController]
     [Route("api/[controller]")]
     public class InvoicesController : ControllerBase

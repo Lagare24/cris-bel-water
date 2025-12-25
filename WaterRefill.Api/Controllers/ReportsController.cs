@@ -5,7 +5,7 @@ using WaterRefill.Api.Data;
 
 namespace WaterRefill.Api.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Staff")]
     [ApiController]
     [Route("api/[controller]")]
     public class ReportsController : ControllerBase

@@ -8,7 +8,7 @@ using WaterRefill.Api.Models;
 
 namespace WaterRefill.Api.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
@@ -155,13 +155,19 @@ namespace WaterRefill.Api.Controllers
                 return BadRequest(new { message = "User data is required" });
             }
 
-            if (string.IsNullOrWhiteSpace(updateUserDto.FullName) &&
-                string.IsNullOrWhiteSpace(updateUserDto.Username) &&
-                string.IsNullOrWhiteSpace(updateUserDto.Password) &&
-                string.IsNullOrWhiteSpace(updateUserDto.Role) &&
-                updateUserDto.IsActive == null)
+            if (string.IsNullOrWhiteSpace(updateUserDto.FullName))
             {
-                return BadRequest(new { message = "At least one field must be provided for update" });
+                return BadRequest(new { message = "FullName is required" });
+            }
+
+            if (string.IsNullOrWhiteSpace(updateUserDto.Username))
+            {
+                return BadRequest(new { message = "Username is required" });
+            }
+
+            if (string.IsNullOrWhiteSpace(updateUserDto.Role))
+            {
+                return BadRequest(new { message = "Role is required" });
             }
 
             try
@@ -182,24 +188,13 @@ namespace WaterRefill.Api.Controllers
                 }
 
                 // Update fields if provided
-                if (!string.IsNullOrWhiteSpace(updateUserDto.FullName))
-                {
-                    user.FullName = updateUserDto.FullName.Trim();
-                }
-
-                if (!string.IsNullOrWhiteSpace(updateUserDto.Username))
-                {
-                    user.Username = updateUserDto.Username.Trim();
-                }
+                user.FullName = updateUserDto.FullName.Trim();
+                user.Username = updateUserDto.Username.Trim();
+                user.Role = updateUserDto.Role.Trim();
 
                 if (!string.IsNullOrWhiteSpace(updateUserDto.Password))
                 {
                     user.PasswordHash = HashPassword(updateUserDto.Password);
-                }
-
-                if (!string.IsNullOrWhiteSpace(updateUserDto.Role))
-                {
-                    user.Role = updateUserDto.Role.Trim();
                 }
 
                 if (updateUserDto.IsActive.HasValue)
@@ -231,15 +226,46 @@ namespace WaterRefill.Api.Controllers
                     return NotFound(new { message = $"User with ID {id} not found" });
                 }
 
-                _context.Users.Remove(user);
+                user.IsActive = false;
+                _context.Users.Update(user);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "User deleted successfully" });
+                return Ok(new { message = "User deactivated successfully" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error deleting user with ID {id}");
                 return StatusCode(500, new { message = "Error deleting user", error = ex.Message });
+            }
+        }
+
+        // PATCH: api/users/{id}/status
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateUserStatusDto statusDto)
+        {
+            if (statusDto == null)
+            {
+                return BadRequest(new { message = "Status payload is required" });
+            }
+
+            try
+            {
+                var user = await _context.Users.FindAsync(id);
+                if (user == null)
+                {
+                    return NotFound(new { message = $"User with ID {id} not found" });
+                }
+
+                user.IsActive = statusDto.IsActive;
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = $"User {(statusDto.IsActive ? "activated" : "deactivated") } successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating status for user with ID {id}");
+                return StatusCode(500, new { message = "Error updating user status", error = ex.Message });
             }
         }
 
@@ -279,5 +305,10 @@ namespace WaterRefill.Api.Controllers
         public string Password { get; set; }
         public string Role { get; set; }
         public bool? IsActive { get; set; }
+    }
+
+    public class UpdateUserStatusDto
+    {
+        public bool IsActive { get; set; }
     }
 }

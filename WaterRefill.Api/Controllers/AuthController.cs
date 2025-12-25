@@ -78,9 +78,9 @@ namespace WaterRefill.Api.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim("UserId", user.UserId.ToString()),
-                new Claim("Username", user.Username),
-                new Claim("Role", user.Role)
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role)
             };
 
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
