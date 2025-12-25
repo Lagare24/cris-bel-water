@@ -3,25 +3,29 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WaterRefill.Api.Data;
 using WaterRefill.Api.Models;
+using WaterRefill.Api.Services;
 
 namespace WaterRefill.Api.Controllers
 {
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
         private readonly WaterRefillContext _context;
         private readonly ILogger<ProductsController> _logger;
+        private readonly PricingService _pricingService;
 
-        public ProductsController(WaterRefillContext context, ILogger<ProductsController> logger)
+        public ProductsController(WaterRefillContext context, ILogger<ProductsController> logger, PricingService pricingService)
         {
             _context = context;
             _logger = logger;
+            _pricingService = pricingService;
         }
 
         // GET: /api/products?name=filter&includeInactive=true
         [HttpGet]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts([FromQuery] string? name, [FromQuery] bool includeInactive = false)
         {
             try
@@ -61,7 +65,8 @@ namespace WaterRefill.Api.Controllers
 
         // GET: /api/products/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<ProductDto>> GetProduct(int id)
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<ActionResult<ProductDto>> GetProduct(int id, [FromQuery] int? clientId)
         {
             try
             {
@@ -81,6 +86,23 @@ namespace WaterRefill.Api.Controllers
                     IsActive = product.IsActive
                 };
 
+                if (clientId.HasValue && clientId.Value > 0)
+                {
+                    try
+                    {
+                        var effective = await _pricingService.GetEffectivePriceAsync(clientId.Value, product.Id);
+                        dto.Price = effective;
+                    }
+                    catch (KeyNotFoundException knf)
+                    {
+                        return NotFound(new { message = knf.Message });
+                    }
+                    catch (InvalidOperationException ioe)
+                    {
+                        return Conflict(new { message = ioe.Message });
+                    }
+                }
+
                 return Ok(dto);
             }
             catch (Exception ex)
@@ -92,6 +114,7 @@ namespace WaterRefill.Api.Controllers
 
         // POST: /api/products
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductDto dto)
         {
             if (dto == null)
@@ -145,6 +168,7 @@ namespace WaterRefill.Api.Controllers
 
         // PUT: /api/products/{id}
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
         {
             if (dto == null)
@@ -215,6 +239,7 @@ namespace WaterRefill.Api.Controllers
         // DELETE: /api/products/{id}
         // Soft delete: set IsActive = false
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             try

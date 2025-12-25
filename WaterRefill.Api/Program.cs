@@ -16,6 +16,7 @@ builder.Services.AddDbContext<WaterRefillContext>(options =>
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddScoped<InvoicePdfService>();
+builder.Services.AddScoped<PricingService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

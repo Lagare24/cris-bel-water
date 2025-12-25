@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WaterRefill.Api.Data;
 using WaterRefill.Api.Models;
+using WaterRefill.Api.Services;
 
 namespace WaterRefill.Api.Controllers
 {
@@ -13,11 +14,13 @@ namespace WaterRefill.Api.Controllers
     {
         private readonly WaterRefillContext _context;
         private readonly ILogger<SalesController> _logger;
+        private readonly PricingService _pricingService;
 
-        public SalesController(WaterRefillContext context, ILogger<SalesController> logger)
+        public SalesController(WaterRefillContext context, ILogger<SalesController> logger, PricingService pricingService)
         {
             _context = context;
             _logger = logger;
+            _pricingService = pricingService;
         }
 
         // GET: /api/sales?startDate=2025-01-01&endDate=2025-01-31&clientId=1
@@ -127,6 +130,10 @@ namespace WaterRefill.Api.Controllers
                     {
                         return BadRequest(new { message = $"ClientId {dto.ClientId.Value} does not exist" });
                     }
+                    if (!client.IsActive)
+                    {
+                        return Conflict(new { message = "Client is inactive" });
+                    }
                 }
 
                 // Fetch products used in sale
@@ -140,6 +147,13 @@ namespace WaterRefill.Api.Controllers
                 if (missing.Count > 0)
                 {
                     return BadRequest(new { message = "Some products do not exist", missing });
+                }
+
+                // Ensure all products are active
+                var inactive = products.Values.Where(p => !p.IsActive).Select(p => p.Id).ToList();
+                if (inactive.Count > 0)
+                {
+                    return Conflict(new { message = "Some products are inactive and cannot be sold", inactive });
                 }
 
                 var sale = new Sale
@@ -158,8 +172,26 @@ namespace WaterRefill.Api.Controllers
                 {
                     var product = products[item.ProductId];
 
-                    // Compute price with optional per-client override hook
-                    decimal unitPrice = GetUnitPriceForClient(product, client);
+                    decimal unitPrice;
+                    if (client != null)
+                    {
+                        try
+                        {
+                            unitPrice = await _pricingService.GetEffectivePriceAsync(client.Id, product.Id);
+                        }
+                        catch (KeyNotFoundException knf)
+                        {
+                            return NotFound(new { message = knf.Message });
+                        }
+                        catch (InvalidOperationException ioe)
+                        {
+                            return Conflict(new { message = ioe.Message });
+                        }
+                    }
+                    else
+                    {
+                        unitPrice = product.Price;
+                    }
 
                     var saleItem = new SaleItem
                     {
@@ -221,13 +253,7 @@ namespace WaterRefill.Api.Controllers
             };
         }
 
-        // Placeholder for per-client pricing override (extend when override table exists)
-        private static decimal GetUnitPriceForClient(Product product, Client? client)
-        {
-            // TODO: If you add a per-client price table (e.g., ClientProductPrice), query it here.
-            // For now, return the product base price.
-            return product.Price;
-        }
+        // Pricing resolution handled via PricingService in CreateSale
     }
 
     // DTOs
