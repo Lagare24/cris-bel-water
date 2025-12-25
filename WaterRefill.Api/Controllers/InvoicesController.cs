@@ -11,11 +11,13 @@ namespace WaterRefill.Api.Controllers
     {
         private readonly WaterRefillContext _context;
         private readonly ILogger<InvoicesController> _logger;
+        private readonly Services.InvoicePdfService _pdfService;
 
-        public InvoicesController(WaterRefillContext context, ILogger<InvoicesController> logger)
+        public InvoicesController(WaterRefillContext context, ILogger<InvoicesController> logger, Services.InvoicePdfService pdfService)
         {
             _context = context;
             _logger = logger;
+            _pdfService = pdfService;
         }
 
         // POST: /api/invoices/from-sale/{saleId}
@@ -147,6 +149,33 @@ namespace WaterRefill.Api.Controllers
             {
                 _logger.LogError(ex, $"Error retrieving invoice with ID {id}");
                 return StatusCode(500, new { message = "Error retrieving invoice", error = ex.Message });
+            }
+        }
+
+        // GET: /api/invoices/{id}/pdf
+        [HttpGet("{id}/pdf")]
+        public async Task<IActionResult> GetInvoicePdf(int id)
+        {
+            try
+            {
+                var invoice = await _context.Invoices
+                    .Include(i => i.Client)
+                    .Include(i => i.Items)
+                    .Include(i => i.Sale)
+                    .FirstOrDefaultAsync(i => i.Id == id);
+                if (invoice == null)
+                {
+                    return NotFound(new { message = $"Invoice with ID {id} not found" });
+                }
+
+                var pdfBytes = _pdfService.Generate(invoice);
+                var fileName = $"Invoice-{invoice.InvoiceNumber}.pdf";
+                return File(pdfBytes, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error generating PDF for invoice {id}");
+                return StatusCode(500, new { message = "Error generating invoice PDF", error = ex.Message });
             }
         }
 
