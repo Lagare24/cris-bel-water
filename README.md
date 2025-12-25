@@ -1,47 +1,64 @@
 # Water Refilling Station Management System
 
 ## Project Overview
-This is a generic management system for water refilling stations. It provides tools to manage:
-- User management (admin/staff)
-- Client management
-- Product inventory
-- Sales and sale items tracking
-- Invoice generation (PDF/email)
-- Reporting (daily/monthly)
+A complete full-stack management system for water refilling stations built with **.NET 10** and **Next.js 16**.
 
-This project is structured for easy AI-assisted development while keeping business logic and UX review in human control.
+### ✅ Features Implemented:
+- 🔐 **Authentication**: JWT-based login with role-based access (Admin/Staff)
+- 👥 **User Management**: CRUD operations with secure password hashing
+- 👤 **Client Management**: Track customer information with soft-delete
+- 📦 **Product Inventory**: Manage products with pricing, stock, and status
+- 💰 **Sales Management**: Multi-item sales with automatic total calculation
+- 📊 **Reporting**: Date-filtered sales reports with CSV/PDF export
+- 📄 **PDF Invoices**: Professional invoice generation with QuestPDF
+- 🎨 **Modern UI**: Responsive Next.js frontend with Tailwind CSS v4
+- 🌱 **Demo Data**: Auto-seeded database with sample data for testing
 
 ## General Development Instructions
 
-### Backend (.NET 8 Web API)
-- Use WaterRefillContext as DbContext
-- Implement controllers for:
-  - Users
-  - Clients
-  - Products
-  - Sales
-  - SaleItems
-- Use proper HTTP status codes for all endpoints
-- Include input validation for models
-- Automatically calculate totals in Sales from SaleItems
-- Generate PDF invoices using QuestPDF
-- Email invoices optionally using MailKit
+### Backend (.NET 10 Web API)
+**Technology Stack:**
+- ASP.NET Core Web API (.NET 10.0)
+- Entity Framework Core with SQL Server LocalDB
+- JWT Authentication with BCrypt password hashing
+- QuestPDF for invoice generation
+- Swagger/OpenAPI documentation
 
-### Frontend (Next.js + Tailwind)
-- Pages:
-  - /login
-  - /dashboard
-  - /clients
-  - /products
-  - /sales
-  - /sales/add
-  - /reports
-- Use Axios for API calls
-- Forms should validate user inputs
-- /sales/add page:
-  - Allow multiple products with quantity
-  - Automatically calculate subtotal and total
-- Dashboard provides overview metrics and quick links to reports
+**Implemented Controllers:**
+- `AuthController`: Login with JWT token generation
+- `UsersController`: User CRUD with role management
+- `ClientsController`: Client management with soft-delete
+- `ProductsController`: Product inventory with stock tracking
+- `SalesController`: Multi-item sales with automatic pricing
+- `ReportsController`: Sales reports with CSV/PDF export
+
+**Services:**
+- `PricingService`: Calculates sale totals and applies business rules
+- `InvoicePdfService`: Generates professional PDF invoices
+- `DataSeeder`: Seeds database with demo data on first run
+
+### Frontend (Next.js 16 + Tailwind CSS v4)
+**Technology Stack:**
+- Next.js 16.1.1 with App Router and Turbopack
+- React 19 with TypeScript (strict mode)
+- Tailwind CSS v4 for styling
+- Axios for API calls with JWT interceptors
+
+**Implemented Pages:**
+- 🔐 `/login` - JWT authentication with token storage
+- 📊 `/dashboard` - Overview with sales metrics and quick actions
+- 👥 `/clients` - Full CRUD client management with status badges
+- 📦 `/products` - Product inventory with price/stock management
+- 🛒 `/sales` - Sales listing with date filters and detail modal
+- ➕ `/sales/add` - Shopping cart-style sale creation:
+  - Multi-product selection with stock validation
+  - Dynamic quantity adjustment
+  - Real-time subtotal and total calculation
+  - Optional client selection (walk-in support)
+- 📈 `/reports` - Sales reports with:
+  - Date range and client filters
+  - Summary statistics (sales count, revenue, items sold)
+  - Export buttons for CSV and PDF formats
 
 ### Git Workflow
 - main branch: stable, deployable
@@ -51,15 +68,27 @@ This project is structured for easy AI-assisted development while keeping busine
   - feat(sales): add POST API for sales
   - fix(clients): correct email validation
 
-### Database
-- SQL Server (LocalDB) connection: (localdb)\MSSQLLocalDB
-- Tables:
-  - Users
-  - Clients
-  - Products
-  - Sales
-  - SaleItems
-- Use EF Core migrations to update schema
+### Database Schema
+**Connection:** SQL Server LocalDB - `(localdb)\MSSQLLocalDB`
+
+**Tables:**
+- `Users`: Id, Username, Password (hashed), Email, Role, CreatedAt
+- `Clients`: Id, Name, Email, Phone, Address, IsActive, CreatedAt
+- `Products`: Id, Name, Description, Price, Quantity, IsActive, CreatedAt
+- `Sales`: Id, ClientId (nullable), SaleDate, TotalAmount
+- `SaleItems`: Id, SaleId, ProductId, Quantity, UnitPrice
+
+**Migrations Applied:**
+- Initial schema creation
+- User authentication fields
+- Soft-delete support (IsActive)
+- Sale-Client relationship (nullable for walk-ins)
+
+**Demo Data Included:**
+- 3 users (admin, staff1, staff2)
+- 10 clients (various businesses and households)
+- 15 products (different water types and containers)
+- 30 sales transactions with line items
 
 ### AI Usage Guidelines
 - Feed instructions in modular chunks per feature
@@ -69,54 +98,175 @@ This project is structured for easy AI-assisted development while keeping busine
 - Keep naming generic inside the code for reusability
 
 ## Getting Started
-1. Clone the repository
+
+### Prerequisites
+- .NET 10.0 SDK
+- Node.js 18+ and npm
+- SQL Server LocalDB (included with Visual Studio)
+
+### 1. Clone the Repository
+```bash
 git clone https://github.com/<username>/cris-bel-water.git
 cd cris-bel-water
+```
 
-2. Backend setup
+### 2. Backend Setup
+```bash
 cd WaterRefill.Api
 dotnet restore
 dotnet tool update --global dotnet-ef
 dotnet ef database update
+```
 
-3. Frontend setup
-cd water-refill-frontend
+The database will be **automatically seeded** with demo data on first run.
+
+### 3. Frontend Setup
+```bash
+cd ../water-refill-frontend
 npm install
-npm run dev
+```
 
-4. Configure appsettings.json connection string
+### 4. Configuration
+
+**Backend** (`appsettings.json`):
+```json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=WaterRefillDB;Trusted_Connection=True;"
+  },
+  "Jwt": {
+    "Key": "YourSuperSecretKeyHere123456789",
+    "Issuer": "WaterRefillAPI",
+    "Audience": "WaterRefillClient"
   }
 }
+```
 
-5. Run backend and frontend servers simultaneously
-6. Open browser to http://localhost:3000 (frontend)
+**Frontend** (`.env.local` - optional):
+```
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5179
+```
 
-## Feature Development Checklist (for AI/Copilot)
-### Backend
-- [ ] Users CRUD API
-- [ ] Clients CRUD API
-- [ ] Products CRUD API
-- [ ] Sales CRUD API
-- [ ] SaleItems CRUD API
-- [ ] PDF Invoice generation
-- [ ] Email invoices (optional)
+### 5. Run the Application
 
-### Frontend
-- [ ] Login page
-- [ ] Dashboard page
-- [ ] Clients management page
-- [ ] Products management page
-- [ ] Sales listing page
-- [ ] Sales add/edit page with auto totals
-- [ ] Reports page (daily/monthly)
+**Terminal 1 - Backend:**
+```bash
+cd WaterRefill.Api
+dotnet run
+```
+API will run on: `http://localhost:5000`
+Swagger UI: `http://localhost:5000/swagger`
 
-## Notes
-- Keep branch naming consistent: feature/<module-name>
-- Always commit incremental changes and push to dev first
-- AI-generated code is a boilerplate; ensure manual review for accuracy and business rules
+**Terminal 2 - Frontend:**
+```bash
+cd water-refill-frontend
+npm run dev
+```
+App will run on: `http://localhost:3000`
+
+### 6. Login with Demo Credentials
+- **Admin**: `admin` / `admin123`
+- **Staff**: `staff1` / `staff123`
+
+## Feature Development Status
+
+### Backend ✅ Complete
+- ✅ Authentication API (JWT)
+- ✅ Users CRUD API
+- ✅ Clients CRUD API with soft-delete
+- ✅ Products CRUD API with soft-delete
+- ✅ Sales CRUD API with multi-item support
+- ✅ SaleItems automatic handling
+- ✅ PricingService for business logic
+- ✅ PDF Invoice generation (QuestPDF)
+- ✅ CSV Export for reports
+- ✅ Reports API with filters
+- ✅ Database seeding with demo data
+- ⬜ Email invoices (future enhancement)
+
+### Frontend ✅ Complete
+- ✅ Login page with JWT authentication
+- ✅ Dashboard with metrics and quick actions
+- ✅ Clients management (CRUD with modals)
+- ✅ Products management (CRUD with stock)
+- ✅ Sales listing with filters and details
+- ✅ Sales creation (multi-product cart)
+- ✅ Reports page with CSV/PDF export
+- ✅ Responsive navigation and UI
+- ⬜ User profile/settings (future)
+- ⬜ Advanced analytics charts (future)
+
+## API Endpoints Reference
+
+### Authentication
+- `POST /api/auth/login` - Login with username/password, returns JWT token
+
+### Users
+- `GET /api/users` - Get all users
+- `GET /api/users/{id}` - Get user by ID
+- `POST /api/users` - Create new user
+- `PUT /api/users/{id}` - Update user
+- `DELETE /api/users/{id}` - Delete user
+
+### Clients
+- `GET /api/clients` - Get all active clients
+- `GET /api/clients/{id}` - Get client by ID
+- `POST /api/clients` - Create new client
+- `PUT /api/clients/{id}` - Update client
+- `DELETE /api/clients/{id}` - Soft-delete client
+
+### Products
+- `GET /api/products` - Get all active products
+- `GET /api/products/{id}` - Get product by ID
+- `POST /api/products` - Create new product
+- `PUT /api/products/{id}` - Update product
+- `DELETE /api/products/{id}` - Soft-delete product
+
+### Sales
+- `GET /api/sales` - Get sales with optional filters (startDate, endDate, clientId)
+- `GET /api/sales/{id}` - Get sale with line items
+- `POST /api/sales` - Create new sale with items
+- `GET /api/sales/{id}/invoice/pdf` - Download PDF invoice
+
+### Reports
+- `GET /api/reports/sales` - Get sales summary (totalSales, totalRevenue, totalQuantity)
+- `GET /api/reports/sales/csv` - Export sales report as CSV
+- `GET /api/reports/sales/pdf` - Export sales report as PDF
+
+**Note:** All endpoints except `/api/auth/login` require JWT Bearer token authentication.
+
+## Project Structure
+
+```
+cris-bel-water/
+├── WaterRefill.Api/              # Backend (.NET 10)
+│   ├── Controllers/              # API endpoints
+│   ├── Data/                     # DbContext and seeder
+│   ├── DTOs/                     # Data transfer objects
+│   ├── Models/                   # Entity models
+│   ├── Services/                 # Business logic
+│   └── Program.cs                # App configuration
+│
+├── water-refill-frontend/        # Frontend (Next.js 16)
+│   ├── app/                      # App router pages
+│   │   ├── clients/              # Client management
+│   │   ├── dashboard/            # Dashboard page
+│   │   ├── login/                # Login page
+│   │   ├── products/             # Product management
+│   │   ├── reports/              # Reports page
+│   │   └── sales/                # Sales pages
+│   ├── components/               # Reusable components
+│   ├── lib/                      # API client (Axios)
+│   └── public/                   # Static assets
+│
+└── README.md                     # This file
+```
+
+## Development Notes
+- Branch naming: `feature/<module-name>`, `fix/<issue>`
+- Commit frequently and push to `dev` branch first
+- Test new features with demo data before production
+- Review generated code for business logic accuracy
 
 ## License
 MIT License (optional)
