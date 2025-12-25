@@ -30,6 +30,9 @@ namespace WaterRefill.Api.Data
                 .IsRequired();
             entity.HasIndex(i => i.InvoiceNumber)
                 .IsUnique();
+            // Ensure only one invoice per sale
+            entity.HasIndex(i => i.SaleId)
+                .IsUnique();
 
             entity.Property(i => i.SaleId)
                 .IsRequired();
