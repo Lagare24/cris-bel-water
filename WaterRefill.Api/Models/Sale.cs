@@ -7,5 +7,6 @@ namespace WaterRefill.Api.Models
         public DateTime SaleDate { get; set; }
         public decimal TotalAmount { get; set; }
         public Client? Client { get; set; }
+        public List<SaleItem> SaleItems { get; set; } = new();
     }
 }
