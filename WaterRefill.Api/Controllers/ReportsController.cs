@@ -407,8 +407,8 @@ namespace WaterRefill.Api.Controllers
 
                 var result = query.Select(x => new TopClientDto
                 {
-                    ClientId = x.ClientId == 0 ? null : x.ClientId,
-                    ClientName = x.ClientId == 0 ? "Walk-in" : (clients.TryGetValue(x.ClientId, out var c) ? c.Name : "Unknown"),
+                    ClientId = x.ClientId,
+                    ClientName = x.ClientId == null ? "Walk-in" : (clients.TryGetValue(x.ClientId.Value, out var c) ? c.Name : "Unknown"),
                     SalesCount = x.SalesCount,
                     TotalAmount = x.TotalAmount
                 }).ToList();
@@ -500,7 +500,7 @@ namespace WaterRefill.Api.Controllers
     {
         public int SaleId { get; set; }
         public DateTime SaleDate { get; set; }
-        public int ClientId { get; set; }
+        public int? ClientId { get; set; }
         public string ClientName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public int ItemCount { get; set; }

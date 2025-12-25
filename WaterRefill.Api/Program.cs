@@ -13,6 +13,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<WaterRefillContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// CORS
+var allowedOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
+    ?? new[] { "http://localhost:3000" };
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
+});
+
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddScoped<InvoicePdfService>();
@@ -76,6 +88,14 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 var app = builder.Build();
 
+// Seed database with demo data
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<WaterRefillContext>();
+    await DataSeeder.SeedDataAsync(context);
+}
+
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 // Swagger (still available; secure endpoints require bearer token when invoked)

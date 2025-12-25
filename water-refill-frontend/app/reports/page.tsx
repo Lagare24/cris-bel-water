@@ -63,7 +63,7 @@ export default function ReportsPage() {
     if (selectedClientId) params.append("clientId", selectedClientId);
 
     const token = localStorage.getItem("token");
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/reports/sales/csv?${params.toString()}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5179"}/api/reports/sales/csv?${params.toString()}`;
     
     // Open in new window with auth header via fetch
     fetch(url, {
@@ -94,7 +94,7 @@ export default function ReportsPage() {
     if (selectedClientId) params.append("clientId", selectedClientId);
 
     const token = localStorage.getItem("token");
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/reports/sales/pdf?${params.toString()}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5179"}/api/reports/sales/pdf?${params.toString()}`;
     
     fetch(url, {
       headers: {
