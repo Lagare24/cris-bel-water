@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WaterRefill.Api.Data;
@@ -5,6 +6,7 @@ using WaterRefill.Api.Models;
 
 namespace WaterRefill.Api.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class ClientsController : ControllerBase
@@ -46,7 +48,8 @@ namespace WaterRefill.Api.Controllers
                     Name = c.Name,
                     Email = c.Email,
                     Phone = c.Phone,
-                    Address = c.Address
+                    Address = c.Address,
+                    IsActive = c.IsActive
                 }).ToList();
 
                 return Ok(dtos);
@@ -76,7 +79,8 @@ namespace WaterRefill.Api.Controllers
                     Name = client.Name,
                     Email = client.Email,
                     Phone = client.Phone,
-                    Address = client.Address
+                    Address = client.Address,
+                    IsActive = client.IsActive
                 };
 
                 return Ok(dto);
@@ -127,7 +131,8 @@ namespace WaterRefill.Api.Controllers
                     Name = dto.Name!.Trim(),
                     Email = dto.Email!.Trim(),
                     Phone = dto.Phone!.Trim(),
-                    Address = dto.Address?.Trim() ?? string.Empty
+                    Address = dto.Address?.Trim() ?? string.Empty,
+                    IsActive = true
                 };
 
                 _context.Clients.Add(client);
@@ -229,15 +234,115 @@ namespace WaterRefill.Api.Controllers
                     return NotFound(new { message = $"Client with ID {id} not found" });
                 }
 
-                _context.Clients.Remove(client);
+                client.IsActive = false;
+                _context.Clients.Update(client);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Client deleted successfully" });
+                return Ok(new { message = "Client deactivated successfully" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error deleting client with ID {id}");
                 return StatusCode(500, new { message = "Error deleting client", error = ex.Message });
+            }
+        }
+
+        // POST: api/clients/{clientId}/prices
+        [HttpPost("{clientId}/prices")]
+        public async Task<IActionResult> SetClientProductPrice(int clientId, [FromBody] ClientPriceOverrideDto dto)
+        {
+            if (dto == null)
+            {
+                return BadRequest(new { message = "Payload is required" });
+            }
+
+            if (dto.ProductId <= 0)
+            {
+                return BadRequest(new { message = "ProductId is required" });
+            }
+
+            if (dto.Price <= 0)
+            {
+                return BadRequest(new { message = "Price must be greater than zero" });
+            }
+
+            try
+            {
+                var client = await _context.Clients.FindAsync(clientId);
+                if (client == null)
+                {
+                    return NotFound(new { message = $"Client with ID {clientId} not found" });
+                }
+                if (!client.IsActive)
+                {
+                    return Conflict(new { message = "Client is inactive" });
+                }
+
+                var product = await _context.Products.FindAsync(dto.ProductId);
+                if (product == null)
+                {
+                    return NotFound(new { message = $"Product with ID {dto.ProductId} not found" });
+                }
+                if (!product.IsActive)
+                {
+                    return Conflict(new { message = "Product is inactive" });
+                }
+
+                var existing = await _context.ClientProductPrices
+                    .FirstOrDefaultAsync(x => x.ClientId == clientId && x.ProductId == dto.ProductId);
+
+                if (existing == null)
+                {
+                    var cpp = new ClientProductPrice
+                    {
+                        ClientId = clientId,
+                        ProductId = dto.ProductId,
+                        Price = dto.Price,
+                        IsActive = true
+                    };
+                    _context.ClientProductPrices.Add(cpp);
+                }
+                else
+                {
+                    existing.Price = dto.Price;
+                    existing.IsActive = true;
+                    _context.ClientProductPrices.Update(existing);
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Override price set successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error setting override price for client {clientId}");
+                return StatusCode(500, new { message = "Error setting override price", error = ex.Message });
+            }
+        }
+
+        // DELETE: api/clients/{clientId}/prices/{productId}
+        [HttpDelete("{clientId}/prices/{productId}")]
+        public async Task<IActionResult> RemoveClientProductPrice(int clientId, int productId)
+        {
+            try
+            {
+                var existing = await _context.ClientProductPrices
+                    .FirstOrDefaultAsync(x => x.ClientId == clientId && x.ProductId == productId);
+
+                if (existing == null)
+                {
+                    return NotFound(new { message = "Override price not found" });
+                }
+
+                existing.IsActive = false;
+                _context.ClientProductPrices.Update(existing);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Override price removed successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error removing override price for client {clientId}, product {productId}");
+                return StatusCode(500, new { message = "Error removing override price", error = ex.Message });
             }
         }
 
@@ -263,6 +368,7 @@ namespace WaterRefill.Api.Controllers
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
     }
 
     public class CreateClientDto
@@ -279,5 +385,11 @@ namespace WaterRefill.Api.Controllers
         public string? Email { get; set; }
         public string? Phone { get; set; }
         public string? Address { get; set; }
+    }
+
+    public class ClientPriceOverrideDto
+    {
+        public int ProductId { get; set; }
+        public decimal Price { get; set; }
     }
 }

@@ -38,6 +38,9 @@ namespace WaterRefill.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -49,6 +52,45 @@ namespace WaterRefill.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clients");
+                });
+
+            modelBuilder.Entity("WaterRefill.Api.Models.ClientProductPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("ClientId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("ClientProductPrices");
                 });
 
             modelBuilder.Entity("WaterRefill.Api.Models.Invoice", b =>
@@ -90,7 +132,8 @@ namespace WaterRefill.Api.Migrations
                     b.HasIndex("InvoiceNumber")
                         .IsUnique();
 
-                    b.HasIndex("SaleId");
+                    b.HasIndex("SaleId")
+                        .IsUnique();
 
                     b.ToTable("Invoices");
                 });
@@ -244,6 +287,25 @@ namespace WaterRefill.Api.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("WaterRefill.Api.Models.ClientProductPrice", b =>
+                {
+                    b.HasOne("WaterRefill.Api.Models.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WaterRefill.Api.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("WaterRefill.Api.Models.Invoice", b =>

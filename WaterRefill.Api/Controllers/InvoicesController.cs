@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WaterRefill.Api.Data;
@@ -5,6 +6,7 @@ using WaterRefill.Api.Models;
 
 namespace WaterRefill.Api.Controllers
 {
+    [Authorize(Roles = "Admin,Staff")]
     [ApiController]
     [Route("api/[controller]")]
     public class InvoicesController : ControllerBase

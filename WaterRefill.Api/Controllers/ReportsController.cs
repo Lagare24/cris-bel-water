@@ -1,9 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WaterRefill.Api.Data;
+using System.Text;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
+using QuestPDF.Helpers;
 
 namespace WaterRefill.Api.Controllers
 {
+    [Authorize(Roles = "Admin,Staff")]
     [ApiController]
     [Route("api/[controller]")]
     public class ReportsController : ControllerBase
@@ -16,6 +22,276 @@ namespace WaterRefill.Api.Controllers
             _context = context;
             _logger = logger;
         }
+
+        // GET: /api/reports/sales?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&clientId=123&staffId=456
+        [HttpGet("sales")]
+        public async Task<ActionResult<SalesReportDto>> GetSalesReport(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            [FromQuery] int? clientId,
+            [FromQuery] int? staffId)
+        {
+            try
+            {
+                var query = _context.Sales
+                    .Include(s => s.Client)
+                    .AsQueryable();
+
+                // Filter by date range
+                if (startDate.HasValue)
+                {
+                    query = query.Where(s => s.SaleDate.Date >= startDate.Value.Date);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(s => s.SaleDate.Date <= endDate.Value.Date);
+                }
+
+                // Filter by clientId
+                if (clientId.HasValue)
+                {
+                    query = query.Where(s => s.ClientId == clientId.Value);
+                }
+
+                // Exclude soft-deleted clients
+                query = query.Where(s => s.Client == null || s.Client.IsActive);
+
+                var sales = await query
+                    .Include(s => s.SaleItems)
+                    .ThenInclude(si => si.Product)
+                    .ToListAsync();
+
+                // Exclude sales with soft-deleted products
+                sales = sales.Where(s => s.SaleItems.All(si => si.Product == null || si.Product.IsActive)).ToList();
+
+                // Calculate summary data
+                int totalSales = sales.Count;
+                int totalItemsSold = sales.SelectMany(s => s.SaleItems).Sum(si => si.Quantity);
+                decimal totalRevenue = sales.Sum(s => s.TotalAmount);
+
+                var result = new SalesReportDto
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    ClientId = clientId,
+                    StaffId = staffId,
+                    TotalSales = totalSales,
+                    TotalItemsSold = totalItemsSold,
+                    TotalRevenue = totalRevenue,
+                    Sales = sales.Select(s => new SalesReportItemDto
+                    {
+                        SaleId = s.Id,
+                        SaleDate = s.SaleDate,
+                        ClientId = s.ClientId,
+                        ClientName = s.Client?.Name ?? "Walk-in",
+                        TotalAmount = s.TotalAmount,
+                        ItemCount = s.SaleItems.Count
+                    }).ToList()
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating sales report");
+                return StatusCode(500, new { message = "Error generating sales report", error = ex.Message });
+            }
+        }
+
+        // GET: /api/reports/sales/csv?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&clientId=123
+        [HttpGet("sales/csv")]
+        public async Task<IActionResult> ExportSalesReportCsv(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            [FromQuery] int? clientId,
+            [FromQuery] int? staffId)
+        {
+            try
+            {
+                var query = _context.Sales
+                    .Include(s => s.Client)
+                    .AsQueryable();
+
+                if (startDate.HasValue)
+                {
+                    query = query.Where(s => s.SaleDate.Date >= startDate.Value.Date);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(s => s.SaleDate.Date <= endDate.Value.Date);
+                }
+
+                if (clientId.HasValue)
+                {
+                    query = query.Where(s => s.ClientId == clientId.Value);
+                }
+
+                query = query.Where(s => s.Client == null || s.Client.IsActive);
+
+                var sales = await query
+                    .Include(s => s.SaleItems)
+                    .ThenInclude(si => si.Product)
+                    .OrderByDescending(s => s.SaleDate)
+                    .ToListAsync();
+
+                sales = sales.Where(s => s.SaleItems.All(si => si.Product == null || si.Product.IsActive)).ToList();
+
+                // Generate CSV
+                var sb = new StringBuilder();
+                sb.AppendLine("Sale ID,Sale Date,Client Name,Item Count,Total Amount");
+
+                foreach (var sale in sales)
+                {
+                    sb.AppendLine($"{sale.Id},{sale.SaleDate:yyyy-MM-dd},{EscapeCsvField(sale.Client?.Name ?? "Walk-in")},{sale.SaleItems.Count},{sale.TotalAmount:F2}");
+                }
+
+                var csv = sb.ToString();
+                var bytes = Encoding.UTF8.GetBytes(csv);
+
+                return File(bytes, "text/csv", $"SalesReport_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting sales report to CSV");
+                return StatusCode(500, new { message = "Error exporting sales report", error = ex.Message });
+            }
+        }
+
+        // GET: /api/reports/sales/pdf?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&clientId=123
+        [HttpGet("sales/pdf")]
+        public async Task<IActionResult> ExportSalesReportPdf(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate,
+            [FromQuery] int? clientId,
+            [FromQuery] int? staffId)
+        {
+            try
+            {
+                var query = _context.Sales
+                    .Include(s => s.Client)
+                    .AsQueryable();
+
+                if (startDate.HasValue)
+                {
+                    query = query.Where(s => s.SaleDate.Date >= startDate.Value.Date);
+                }
+
+                if (endDate.HasValue)
+                {
+                    query = query.Where(s => s.SaleDate.Date <= endDate.Value.Date);
+                }
+
+                if (clientId.HasValue)
+                {
+                    query = query.Where(s => s.ClientId == clientId.Value);
+                }
+
+                query = query.Where(s => s.Client == null || s.Client.IsActive);
+
+                var sales = await query
+                    .Include(s => s.SaleItems)
+                    .ThenInclude(si => si.Product)
+                    .OrderByDescending(s => s.SaleDate)
+                    .ToListAsync();
+
+                sales = sales.Where(s => s.SaleItems.All(si => si.Product == null || si.Product.IsActive)).ToList();
+
+                // Calculate summary
+                int totalSales = sales.Count;
+                int totalItemsSold = sales.SelectMany(s => s.SaleItems).Sum(si => si.Quantity);
+                decimal totalRevenue = sales.Sum(s => s.TotalAmount);
+
+                // Generate PDF using QuestPDF
+                var pdf = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(20);
+
+                        page.Header().Element(header =>
+                        {
+                            header.Text("Sales Report").Bold().FontSize(24);
+                        });
+
+                        page.Content().Column(col =>
+                        {
+                            col.Spacing(10);
+
+                            // Filter info
+                            var filterText = $"Period: {(startDate?.ToString("yyyy-MM-dd") ?? "Start")} to {(endDate?.ToString("yyyy-MM-dd") ?? "End")}";
+                            if (clientId.HasValue)
+                            {
+                                filterText += $" | Client ID: {clientId}";
+                            }
+                            col.Item().Text(filterText).FontSize(10);
+
+                            // Summary section
+                            col.Item().PaddingTop(10).PaddingBottom(10).Element(summary =>
+                            {
+                                summary.Row(row =>
+                                {
+                                    row.RelativeItem().Text($"Total Sales: {totalSales}").Bold();
+                                    row.RelativeItem().Text($"Total Items: {totalItemsSold}").Bold();
+                                    row.RelativeItem().Text($"Total Revenue: ${totalRevenue:F2}").Bold();
+                                });
+                            });
+
+                            // Table rows
+                            col.Item().Element(table =>
+                            {
+                                table.Column(tableCol =>
+                                {
+                                    // Header
+                                    tableCol.Item().BorderBottom(1).BorderColor("CCCCCC").Element(header =>
+                                    {
+                                        header.Row(row =>
+                                        {
+                                            row.RelativeItem(1).Text("Date").Bold().FontSize(10);
+                                            row.RelativeItem(2).Text("Client").Bold().FontSize(10);
+                                            row.RelativeItem(1).Text("Items").Bold().FontSize(10);
+                                            row.RelativeItem(1).Text("Amount").Bold().FontSize(10);
+                                        });
+                                    });
+
+                                    // Rows
+                                    foreach (var sale in sales.Take(100))
+                                    {
+                                        tableCol.Item().BorderBottom(1).BorderColor("EEEEEE").Element(row =>
+                                        {
+                                            row.Row(r =>
+                                            {
+                                                r.RelativeItem(1).Text(sale.SaleDate.ToString("yyyy-MM-dd")).FontSize(9);
+                                                r.RelativeItem(2).Text(sale.Client?.Name ?? "Walk-in").FontSize(9);
+                                                r.RelativeItem(1).Text(sale.SaleItems.Count.ToString()).FontSize(9);
+                                                r.RelativeItem(1).Text($"${sale.TotalAmount:F2}").FontSize(9);
+                                            });
+                                        });
+                                    }
+
+                                    if (sales.Count > 100)
+                                    {
+                                        tableCol.Item().Text($"... and {sales.Count - 100} more records").FontSize(9);
+                                    }
+                                });
+                            });
+                        });
+
+                        page.Footer().AlignCenter().Text($"Generated on {DateTime.Now:yyyy-MM-dd HH:mm:ss}").FontSize(8);
+                    });
+                }).GeneratePdf();
+
+                return File(pdf, "application/pdf", $"SalesReport_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting sales report to PDF");
+                return StatusCode(500, new { message = "Error exporting sales report", error = ex.Message });
+            }
+        }
+
 
         // GET: /api/reports/daily-sales?date=YYYY-MM-DD
         [HttpGet("daily-sales")]
@@ -126,7 +402,7 @@ namespace WaterRefill.Api.Controllers
 
                 var clientIds = query.Where(x => x.ClientId != 0).Select(x => x.ClientId).ToList();
                 var clients = await _context.Clients
-                    .Where(c => clientIds.Contains(c.Id))
+                    .Where(c => clientIds.Contains(c.Id) && c.IsActive)
                     .ToDictionaryAsync(c => c.Id, c => c);
 
                 var result = query.Select(x => new TopClientDto
@@ -172,7 +448,7 @@ namespace WaterRefill.Api.Controllers
 
                 var productIds = grouped.Select(x => x.ProductId).ToList();
                 var products = await _context.Products
-                    .Where(p => productIds.Contains(p.Id))
+                    .Where(p => productIds.Contains(p.Id) && p.IsActive)
                     .ToDictionaryAsync(p => p.Id, p => p);
 
                 var result = grouped.Select(x => new TopProductDto
@@ -191,9 +467,45 @@ namespace WaterRefill.Api.Controllers
                 return StatusCode(500, new { message = "Error generating top products report", error = ex.Message });
             }
         }
+
+        // Helper method to escape CSV fields
+        private static string EscapeCsvField(string field)
+        {
+            if (string.IsNullOrEmpty(field))
+                return string.Empty;
+
+            if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+            {
+                return $"\"{field.Replace("\"", "\"\"")}\"";
+            }
+
+            return field;
+        }
     }
 
-    // DTOs
+    // DTOs for Reports
+    public class SalesReportDto
+    {
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public int? ClientId { get; set; }
+        public int? StaffId { get; set; }
+        public int TotalSales { get; set; }
+        public int TotalItemsSold { get; set; }
+        public decimal TotalRevenue { get; set; }
+        public List<SalesReportItemDto> Sales { get; set; } = new();
+    }
+
+    public class SalesReportItemDto
+    {
+        public int SaleId { get; set; }
+        public DateTime SaleDate { get; set; }
+        public int ClientId { get; set; }
+        public string ClientName { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
+        public int ItemCount { get; set; }
+    }
+
     public class DailySalesReportDto
     {
         public DateTime Date { get; set; }

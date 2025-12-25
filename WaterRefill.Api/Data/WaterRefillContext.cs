@@ -17,6 +17,7 @@ namespace WaterRefill.Api.Data
         public DbSet<SaleItem> SaleItems { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
+        public DbSet<ClientProductPrice> ClientProductPrices { get; set; }
 
       protected override void OnModelCreating(ModelBuilder modelBuilder)
       {
@@ -77,6 +78,63 @@ namespace WaterRefill.Api.Data
                 .HasPrecision(18, 2)
                 .IsRequired();
         });
+
+        // ClientProductPrice configuration
+        modelBuilder.Entity<ClientProductPrice>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ClientId).IsRequired();
+            entity.Property(x => x.ProductId).IsRequired();
+            entity.Property(x => x.Price).HasPrecision(18, 2).IsRequired();
+            entity.Property(x => x.IsActive).HasDefaultValue(true);
+
+            entity.Property(x => x.CreatedAt)
+                  .HasColumnType("datetime2");
+            entity.Property(x => x.UpdatedAt)
+                  .HasColumnType("datetime2");
+
+            entity.HasIndex(x => new { x.ClientId, x.ProductId }).IsUnique();
+
+            entity.HasOne(x => x.Client)
+                  .WithMany()
+                  .HasForeignKey(x => x.ClientId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Product)
+                  .WithMany()
+                  .HasForeignKey(x => x.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+      }
+
+      public override int SaveChanges()
+      {
+          SetAuditTimestamps();
+          return base.SaveChanges();
+      }
+
+      public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+      {
+          SetAuditTimestamps();
+          return base.SaveChangesAsync(cancellationToken);
+      }
+
+      private void SetAuditTimestamps()
+      {
+          var utcNow = DateTime.UtcNow;
+
+          foreach (var entry in ChangeTracker.Entries<ClientProductPrice>())
+          {
+              if (entry.State == EntityState.Added)
+              {
+                  entry.Entity.CreatedAt = utcNow;
+                  entry.Entity.UpdatedAt = utcNow;
+              }
+              else if (entry.State == EntityState.Modified)
+              {
+                  entry.Entity.UpdatedAt = utcNow;
+              }
+          }
       }
     }
 }
