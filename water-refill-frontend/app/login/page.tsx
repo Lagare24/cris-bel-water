@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Droplet, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 
 export default function LoginPage() {
@@ -62,81 +67,93 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl shadow-2xl overflow-hidden border border-white/20">
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-8 text-center">
-            <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-              <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-              </svg>
+          <div className="p-8 text-center relative overflow-hidden" style={{ backgroundColor: '#0044ad' }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+            <div className="relative">
+              <div className="w-20 h-20 bg-white/90 dark:bg-white/10 backdrop-blur-sm rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                <Droplet className="w-12 h-12 text-primary dark:text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+                Water Refilling
+              </h1>
+              <p className="text-white/80 mt-2 font-medium">Management System</p>
             </div>
-            <h1 className="text-3xl font-bold text-white">Water Refilling</h1>
-            <p className="text-blue-100 mt-2">Management System</p>
           </div>
 
           {/* Form Section */}
-          <form onSubmit={handleLogin} className="p-8 space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <form onSubmit={handleLogin} className="p-8 space-y-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-sm font-semibold">
                 Username
-              </label>
-              <input
+              </Label>
+              <Input
+                id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Enter your username"
                 required
+                className="h-11"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-semibold">
                 Password
-              </label>
-              <input
+              </Label>
+              <Input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Enter your password"
                 required
+                className="h-11"
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                <p className="text-red-700 text-sm font-medium">{error}</p>
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-11 font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
             >
               {loading ? (
                 <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   Logging in...
                 </span>
               ) : (
                 "Sign In"
               )}
-            </button>
+            </Button>
 
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-center text-sm text-gray-600">
+            <div className="pt-4 border-t border-border">
+              <p className="text-center text-sm text-muted-foreground">
                 <span className="font-semibold">Demo Credentials:</span>
               </p>
-              <div className="mt-2 space-y-1 text-xs text-gray-500 text-center">
-                <p>Admin: <span className="font-mono bg-gray-100 px-2 py-1 rounded">admin / admin123</span></p>
-                <p>Staff: <span className="font-mono bg-gray-100 px-2 py-1 rounded">staff1 / staff123</span></p>
+              <div className="mt-2 space-y-1 text-xs text-muted-foreground text-center">
+                <p>
+                  Admin:{" "}
+                  <span className="font-mono bg-muted px-2 py-1 rounded">
+                    admin / admin123
+                  </span>
+                </p>
+                <p>
+                  Staff:{" "}
+                  <span className="font-mono bg-muted px-2 py-1 rounded">
+                    staff1 / staff123
+                  </span>
+                </p>
               </div>
             </div>
           </form>

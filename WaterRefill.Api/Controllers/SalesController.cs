@@ -156,9 +156,30 @@ namespace WaterRefill.Api.Controllers
                     return Conflict(new { message = "Some products are inactive and cannot be sold", inactive });
                 }
 
+                // Check stock availability
+                var outOfStock = new List<object>();
+                foreach (var item in dto.Items)
+                {
+                    var product = products[item.ProductId];
+                    if (product.Quantity < item.Quantity)
+                    {
+                        outOfStock.Add(new
+                        {
+                            productId = product.Id,
+                            productName = product.Name,
+                            requested = item.Quantity,
+                            available = product.Quantity
+                        });
+                    }
+                }
+                if (outOfStock.Count > 0)
+                {
+                    return Conflict(new { message = "Insufficient stock for some products", outOfStock });
+                }
+
                 var sale = new Sale
                 {
-                    ClientId = dto.ClientId ?? 0,
+                    ClientId = dto.ClientId ?? 1, // Use Walk-in Customer (ID 1) if not specified
                     Client = client,
                     SaleDate = DateTime.UtcNow,
                     TotalAmount = 0m
@@ -203,6 +224,10 @@ namespace WaterRefill.Api.Controllers
 
                     _context.SaleItems.Add(saleItem);
                     total += unitPrice * item.Quantity;
+
+                    // Reduce product stock
+                    product.Quantity -= item.Quantity;
+                    _context.Products.Update(product);
                 }
 
                 sale.TotalAmount = total;

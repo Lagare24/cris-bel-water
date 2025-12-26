@@ -60,6 +60,7 @@ public static class DataSeeder
         // Seed Clients
         var clients = new List<Client>
         {
+            new Client { Name = "Walk-in Customer", Email = "walkin@waterrefill.com", Phone = "000-0000", Address = "N/A", IsActive = true },
             new Client { Name = "ABC Corporation", Email = "contact@abc.com", Phone = "555-0101", Address = "123 Business St", IsActive = true },
             new Client { Name = "XYZ Restaurant", Email = "orders@xyz.com", Phone = "555-0102", Address = "456 Food Ave", IsActive = true },
             new Client { Name = "Smith Family", Email = "smith@email.com", Phone = "555-0103", Address = "789 Home Rd", IsActive = true },
@@ -108,7 +109,7 @@ public static class DataSeeder
 
             var sale = new Sale
             {
-                ClientId = hasClient ? clients[random.Next(clients.Count - 1)].Id : null, // null for walk-in
+                ClientId = hasClient ? clients[random.Next(1, clients.Count - 1)].Id : clients[0].Id, // Use Walk-in Customer (first client)
                 SaleDate = saleDate,
                 TotalAmount = 0, // Will calculate below
                 SaleItems = new List<SaleItem>()

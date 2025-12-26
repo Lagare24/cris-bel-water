@@ -3,6 +3,31 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { PageHeader } from "@/components/page-header";
+import { LoadingSpinner } from "@/components/loading";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Minus, Trash2, ShoppingCart, User } from "lucide-react";
+import { toast } from "sonner";
 import api from "@/lib/api";
 
 interface Product {
@@ -29,7 +54,7 @@ export default function AddSalePage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(1); // Default to Walk-in Customer (ID 1)
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -58,7 +83,7 @@ export default function AddSalePage() {
 
   const handleAddItem = () => {
     if (!selectedProductId || !quantity) {
-      alert("Please select a product and enter quantity");
+      toast.error("Please select a product and enter quantity");
       return;
     }
 
@@ -67,12 +92,12 @@ export default function AddSalePage() {
 
     const qty = parseInt(quantity);
     if (qty <= 0) {
-      alert("Quantity must be greater than 0");
+      toast.error("Quantity must be greater than 0");
       return;
     }
 
     if (qty > product.quantity) {
-      alert(`Only ${product.quantity} units available in stock`);
+      toast.error(`Only ${product.quantity} units available in stock`);
       return;
     }
 
@@ -85,6 +110,7 @@ export default function AddSalePage() {
       const updatedItems = [...saleItems];
       updatedItems[existingIndex].quantity += qty;
       setSaleItems(updatedItems);
+      toast.success(`Updated ${product.name} quantity`);
     } else {
       setSaleItems([
         ...saleItems,
@@ -95,6 +121,7 @@ export default function AddSalePage() {
           unitPrice: product.price,
         },
       ]);
+      toast.success(`Added ${product.name} to cart`);
     }
 
     setSelectedProductId("");
@@ -113,7 +140,7 @@ export default function AddSalePage() {
 
     const product = products.find((p) => p.id === productId);
     if (product && newQty > product.quantity) {
-      alert(`Only ${product.quantity} units available`);
+      toast.error(`Only ${product.quantity} units available`);
       return;
     }
 
@@ -137,27 +164,46 @@ export default function AddSalePage() {
 
     if (saleItems.length === 0) {
       setError("Please add at least one item to the sale");
+      toast.error("Please add at least one item to the sale");
       return;
+    }
+
+    // Validate stock availability before submitting
+    for (const item of saleItems) {
+      const product = products.find((p) => p.id === item.productId);
+      if (product && item.quantity > product.quantity) {
+        const errorMsg = `Insufficient stock for ${item.productName}. Only ${product.quantity} available.`;
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+      }
     }
 
     setSubmitting(true);
 
     try {
       const payload = {
-        clientId: selectedClientId || undefined,
+        clientId: selectedClientId,
         items: saleItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
         })),
       };
 
+      console.log("Sale payload:", JSON.stringify(payload, null, 2));
       await api.post("/api/sales", payload);
-      alert("Sale created successfully!");
+      toast.success("Sale created successfully!");
       router.push("/sales");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Failed to create sale. Please try again."
-      );
+      const errorMsg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        "Failed to create sale. Please try again.";
+      const detailedError = err.response?.data?.error
+        ? `${err.response.data.message}: ${err.response.data.error}`
+        : errorMsg;
+      setError(detailedError);
+      toast.error(detailedError);
     } finally {
       setSubmitting(false);
     }
@@ -165,189 +211,232 @@ export default function AddSalePage() {
 
   if (loading) {
     return (
-      <div>
+      <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container py-8 text-center">Loading...</div>
+        <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container py-8">
-        <h1 className="text-4xl font-bold mb-8">Create New Sale</h1>
+      <div className="container mx-auto px-4 py-8">
+        <PageHeader
+          title="Create New Sale"
+          description="Add products to create a new sale transaction"
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Client Selection */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Client (Optional)</h2>
-            <select
-              value={selectedClientId || ""}
-              onChange={(e) =>
-                setSelectedClientId(e.target.value ? parseInt(e.target.value) : null)
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Walk-in Customer</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Client (Optional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select
+                value={selectedClientId?.toString() || "1"}
+                onValueChange={(value) => setSelectedClientId(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id.toString()}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
 
           {/* Add Products */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Add Products</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Product
-                </label>
-                <select
-                  value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a product</option>
-                  {products
-                    .filter((p) => p.isActive && p.quantity > 0)
-                    .map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} - ${product.price.toFixed(2)} (Stock: {product.quantity})
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantity
-                </label>
-                <div className="flex space-x-2">
-                  <input
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddItem}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 whitespace-nowrap"
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Add Products
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="product">Product</Label>
+                  <Select
+                    value={selectedProductId}
+                    onValueChange={setSelectedProductId}
                   >
-                    Add
-                  </button>
+                    <SelectTrigger id="product">
+                      <SelectValue placeholder="Select a product" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products
+                        .filter((p) => p.isActive && p.quantity > 0)
+                        .map((product) => (
+                          <SelectItem key={product.id} value={product.id.toString()}>
+                            {product.name} - ${product.price.toFixed(2)} (Stock:{" "}
+                            {product.quantity})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantity</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddItem}
+                      className="whitespace-nowrap"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Sale Items */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Sale Items</h2>
-            {saleItems.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                No items added yet. Add products above.
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                        Product
-                      </th>
-                      <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                        Quantity
-                      </th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                        Unit Price
-                      </th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                        Subtotal
-                      </th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {saleItems.map((item) => (
-                      <tr key={item.productId}>
-                        <td className="px-4 py-3 text-sm">{item.productName}</td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              handleUpdateQuantity(
-                                item.productId,
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right">
-                          ${item.unitPrice.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right font-semibold">
-                          ${(item.quantity * item.unitPrice).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(item.productId)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-gray-50 font-bold">
-                      <td colSpan={3} className="px-4 py-3 text-right">
-                        Total:
-                      </td>
-                      <td className="px-4 py-3 text-right text-lg text-blue-600">
-                        ${calculateTotal().toFixed(2)}
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-          </div>
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Shopping Cart</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {saleItems.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg">No items added yet</p>
+                  <p className="text-sm mt-2">Add products above to get started</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead className="text-center">Quantity</TableHead>
+                        <TableHead className="text-right">Unit Price</TableHead>
+                        <TableHead className="text-right">Subtotal</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {saleItems.map((item) => (
+                        <TableRow key={item.productId}>
+                          <TableCell className="font-medium">
+                            {item.productName}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleUpdateQuantity(
+                                    item.productId,
+                                    item.quantity - 1
+                                  )
+                                }
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-12 text-center font-medium">
+                                {item.quantity}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleUpdateQuantity(
+                                    item.productId,
+                                    item.quantity + 1
+                                  )
+                                }
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ${item.unitPrice.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            ${(item.quantity * item.unitPrice).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveItem(item.productId)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-right font-semibold">
+                          Total Amount:
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-2xl font-bold text-primary">
+                            ${calculateTotal().toFixed(2)}
+                          </span>
+                        </TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
 
           {/* Actions */}
-          <div className="flex space-x-4">
-            <button
+          <div className="flex gap-4">
+            <Button
               type="button"
+              variant="outline"
               onClick={() => router.push("/sales")}
-              className="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex-1"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={submitting || saleItems.length === 0}
-              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1"
             >
               {submitting ? "Creating Sale..." : "Create Sale"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

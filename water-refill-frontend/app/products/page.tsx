@@ -1,7 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
 import Navbar from "@/components/Navbar";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table/data-table";
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { LoadingSpinner } from "@/components/loading";
+import { ConfirmationDialog } from "@/components/confirmation-dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import api from "@/lib/api";
 
 interface Product {
@@ -16,8 +38,9 @@ interface Product {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -36,12 +59,13 @@ export default function ProductsPage() {
       setProducts(response.data || []);
     } catch (err) {
       console.error("Error fetching products:", err);
+      toast.error("Failed to fetch products");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenModal = (product?: Product) => {
+  const handleOpenDialog = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
       setFormData({
@@ -54,12 +78,12 @@ export default function ProductsPage() {
       setEditingProduct(null);
       setFormData({ name: "", description: "", price: "", quantity: "" });
     }
-    setShowModal(true);
+    setShowDialog(true);
     setError("");
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+  const handleCloseDialog = () => {
+    setShowDialog(false);
     setEditingProduct(null);
     setFormData({ name: "", description: "", price: "", quantity: "" });
     setError("");
@@ -79,167 +103,212 @@ export default function ProductsPage() {
     try {
       if (editingProduct) {
         await api.put(`/api/products/${editingProduct.id}`, payload);
+        toast.success("Product updated successfully");
       } else {
         await api.post("/api/products", payload);
+        toast.success("Product created successfully");
       }
       fetchProducts();
-      handleCloseModal();
+      handleCloseDialog();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to save product");
+      const errorMsg = err.response?.data?.message || "Failed to save product";
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  const handleDelete = async () => {
+    if (!deleteId) return;
 
     try {
-      await api.delete(`/api/products/${id}`);
+      await api.delete(`/api/products/${deleteId}`);
+      toast.success("Product deleted successfully");
       fetchProducts();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to delete product");
+      toast.error(err.response?.data?.message || "Failed to delete product");
+    } finally {
+      setDeleteId(null);
     }
   };
 
-  return (
-    <div>
-      <Navbar />
-      <div className="container py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">Products</h1>
-          <button
-            onClick={() => handleOpenModal()}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Add Product
-          </button>
+  const getStockBadge = (quantity: number) => {
+    if (quantity < 10) {
+      return (
+        <Badge variant="destructive" className="gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Low Stock
+        </Badge>
+      );
+    } else if (quantity < 50) {
+      return (
+        <Badge className="bg-yellow-500 hover:bg-yellow-600 gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Medium
+        </Badge>
+      );
+    } else {
+      return <Badge className="bg-green-500 hover:bg-green-600">In Stock</Badge>;
+    }
+  };
+
+  const columns: ColumnDef<Product>[] = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Name" />
+      ),
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue("name")}</div>
+      ),
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => (
+        <div className="text-muted-foreground max-w-xs truncate">
+          {row.getValue("description")}
         </div>
+      ),
+    },
+    {
+      accessorKey: "price",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Price" />
+      ),
+      cell: ({ row }) => {
+        const price = parseFloat(row.getValue("price"));
+        return (
+          <div className="font-semibold">
+            ${price.toFixed(2)}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "quantity",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Stock" />
+      ),
+      cell: ({ row }) => {
+        const quantity = row.getValue("quantity") as number;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{quantity}</span>
+            {getStockBadge(quantity)}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "isActive",
+      header: "Status",
+      cell: ({ row }) => {
+        const isActive = row.getValue("isActive") as boolean;
+        return (
+          <Badge variant={isActive ? "default" : "secondary"}>
+            {isActive ? "Active" : "Inactive"}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleOpenDialog(product)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDeleteId(product.id)}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
+        <PageHeader
+          title="Products"
+          description="Manage your inventory and pricing"
+          action={
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          }
+        />
 
         {loading ? (
-          <div className="text-center py-8">Loading...</div>
+          <LoadingSpinner />
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Stock
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {products.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                      No products found. Add your first product!
-                    </td>
-                  </tr>
-                ) : (
-                  products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {product.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {product.description}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 font-semibold">
-                        ${product.price.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {product.quantity}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            product.isActive
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {product.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm space-x-2">
-                        <button
-                          onClick={() => handleOpenModal(product)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={columns}
+            data={products}
+            searchKey="name"
+            searchPlaceholder="Search products..."
+          />
         )}
 
-        {/* Modal */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
-              <h2 className="text-2xl font-bold mb-4">
+        {/* Add/Edit Dialog */}
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="glass-card sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
                 {editingProduct ? "Edit Product" : "Add New Product"}
-              </h2>
+              </DialogTitle>
+              <DialogDescription>
+                {editingProduct
+                  ? "Update product information below."
+                  : "Fill in the product details below."}
+              </DialogDescription>
+            </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description *
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    required
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  rows={3}
+                  required
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price *
-                  </label>
-                  <input
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price *</Label>
+                  <Input
+                    id="price"
                     type="number"
                     step="0.01"
                     min="0"
@@ -247,52 +316,57 @@ export default function ProductsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, price: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stock Quantity *
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Stock Quantity *</Label>
+                  <Input
+                    id="quantity"
                     type="number"
                     min="0"
                     value={formData.quantity}
                     onChange={(e) =>
                       setFormData({ ...formData, quantity: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
+              </div>
 
-                {error && (
-                  <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                    {error}
-                  </div>
-                )}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-                <div className="flex space-x-4">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    {editingProduct ? "Update" : "Create"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseDialog}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingProduct ? "Update" : "Create"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          open={deleteId !== null}
+          onOpenChange={(open) => !open && setDeleteId(null)}
+          title="Delete Product"
+          description="Are you sure you want to delete this product? This action cannot be undone."
+          onConfirm={handleDelete}
+          confirmText="Delete"
+          variant="destructive"
+        />
       </div>
     </div>
   );
