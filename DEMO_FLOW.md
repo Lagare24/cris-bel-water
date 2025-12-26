@@ -154,12 +154,15 @@
    - Show the remove button
 
 **What to Say:**
-> "The cart automatically calculates totals. You can adjust quantities or remove items easily."
+> "The cart automatically calculates totals. You can adjust quantities or remove items easily. The system also validates stock availability in real-time."
 
 5. **Complete the Sale:**
    - Click "Create Sale"
    - **Show success notification**
    - Redirects to Sales list
+
+**What to Say:**
+> "Notice that the sale was created instantly. Behind the scenes, the system just reduced the product stock levels automatically. Let's verify that."
 
 6. **View Sale Details:**
    - Click "View Details" on the sale you just created
@@ -171,6 +174,15 @@
 
 **What to Say:**
 > "Every transaction is recorded with complete details - who bought what, when, and for how much."
+
+7. **Verify Stock Reduction:**
+   - Navigate back to Products page
+   - Find the "5-Gallon Refill" product
+   - **Point out the reduced quantity** (should be 5 less than before)
+   - Show the stock indicator if it changed color
+
+**What to Say:**
+> "See? The inventory updated automatically. The 5-Gallon Refill now shows 5 fewer units. This ensures your stock levels are always accurate in real-time. No manual counting needed!"
 
 ---
 
@@ -194,7 +206,29 @@
 
 ---
 
-### 7. **Reports & Analytics** (4 min)
+### 7. **Stock Validation Demo** (2 min)
+
+**What to Say:**
+> "Let me show you what happens if someone tries to sell more than what's in stock."
+
+**Actions:**
+1. Go back to "Create New Sale"
+2. Try to add a product with low stock (e.g., "Water Cooler Rental" - only 15 in stock)
+3. Set quantity to something high (e.g., 20)
+4. Click "Add"
+
+**What to Say:**
+> "The frontend validates stock before even adding to cart. But let's say someone bypassed that..."
+
+5. Use browser dev tools to change quantity in cart to exceed stock
+   - Or just demonstrate: "If someone tried to sell 100 units of a product with only 15 in stock..."
+
+**What to Say:**
+> "The backend will reject it with a clear error message showing exactly which products are out of stock and how many are available. This prevents overselling and maintains data integrity."
+
+---
+
+### 8. **Reports & Analytics** (4 min)
 
 **What to Say:**
 > "Now for the business intelligence - your Reports dashboard."
@@ -226,7 +260,7 @@
 
 ---
 
-### 8. **User Experience Highlights** (2 min)
+### 9. **User Experience Highlights** (2 min)
 
 **What to Say:**
 > "Let me show you some UX features that make daily operations smooth."
@@ -256,7 +290,7 @@
 
 ---
 
-### 9. **Logout & Security** (1 min)
+### 10. **Logout & Security** (1 min)
 
 **Actions:**
 1. Click the Logout button
@@ -272,21 +306,25 @@
 **What to Say:**
 > "To summarize, this Water Refilling Management System provides:
 >
-> ✅ **Complete Client Management** - Track all customer information
+> ✅ **Complete Client Management** - Track all customer information with walk-in support
 >
-> ✅ **Real-time Inventory** - Never run out of stock with visual indicators
+> ✅ **Smart Inventory Management** - Automatic stock updates with validation
 >
-> ✅ **Fast Sales Processing** - Create transactions in seconds
+> ✅ **Real-time Stock Tracking** - Never run out with visual indicators and alerts
+>
+> ✅ **Fast Sales Processing** - Create transactions in seconds with stock validation
 >
 > ✅ **Comprehensive Reports** - Export data for accounting and analysis
 >
-> ✅ **Modern, Clean Interface** - Minimalist design that's easy to learn and use
+> ✅ **Modern, Minimalist Interface** - Professional navy theme that's easy to learn
 >
 > ✅ **Dark Mode** - Easy on the eyes for extended use
 >
-> ✅ **Mobile Responsive** - Use on any device
+> ✅ **Mobile Responsive** - Use on any device, anywhere
 >
-> The system is ready for deployment and can be customized further based on your specific needs."
+> ✅ **Data Integrity** - Transaction-safe operations prevent overselling
+>
+> The system is production-ready and can be customized further based on your specific needs."
 
 ---
 
@@ -295,10 +333,13 @@
 **Anticipated Questions:**
 
 **Q: Can we customize the product list?**
-A: Absolutely! You can add, edit, or deactivate products anytime.
+A: Absolutely! You can add, edit, or deactivate products anytime. Stock levels update automatically.
 
 **Q: What about pricing changes?**
-A: Product prices can be updated anytime. Historical sales maintain their original prices.
+A: Product prices can be updated anytime. Historical sales maintain their original prices for accurate records.
+
+**Q: What happens if we sell more than what's in stock?**
+A: The system prevents this. It validates stock before processing and shows clear error messages if insufficient stock is available.
 
 **Q: Can staff create sales but not manage products?**
 A: Yes! The role-based system allows you to control what each user can do.
@@ -327,8 +368,11 @@ If time permits and client is interested:
 ### Custom Pricing per Client
 > "We can implement special pricing tiers for wholesale clients or VIP customers."
 
-### Inventory Alerts
-> "The system can send notifications when stock runs low."
+### Automated Low Stock Alerts
+> "The system can send email or SMS notifications when stock falls below a threshold."
+
+### Inventory Restocking
+> "We can add a purchase order module to track when you restock from suppliers."
 
 ### Mobile App
 > "This can be wrapped as a mobile app for iPad/tablet use at the counter."

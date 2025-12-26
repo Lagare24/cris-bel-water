@@ -1,17 +1,19 @@
 # Water Refilling Station Management System
 
 ## Project Overview
-A complete full-stack management system for water refilling stations built with **.NET 10** and **Next.js 16**.
+A complete full-stack management system for water refilling stations built with **.NET 10** and **Next.js 16**. Features a modern, minimalist UI with professional navy theme and comprehensive inventory management.
 
-### ✅ Features Implemented:
+### ✨ Key Features:
 - 🔐 **Authentication**: JWT-based login with role-based access (Admin/Staff)
 - 👥 **User Management**: CRUD operations with secure password hashing
-- 👤 **Client Management**: Track customer information with soft-delete
-- 📦 **Product Inventory**: Manage products with pricing, stock, and status
-- 💰 **Sales Management**: Multi-item sales with automatic total calculation
+- 👤 **Client Management**: Track customer information with walk-in support
+- 📦 **Smart Inventory**: Real-time stock tracking with automatic updates
+- 💰 **Sales Management**: Multi-item sales with stock validation
 - 📊 **Reporting**: Date-filtered sales reports with CSV/PDF export
 - 📄 **PDF Invoices**: Professional invoice generation with QuestPDF
-- 🎨 **Modern UI**: Responsive Next.js frontend with Tailwind CSS v4
+- 🎨 **Minimalist UI**: Clean, professional interface with navy theme
+- 🌓 **Dark Mode**: Seamless theme switching for extended use
+- 📱 **Responsive**: Works perfectly on desktop, tablet, and mobile
 - 🌱 **Demo Data**: Auto-seeded database with sample data for testing
 
 ## General Development Instructions
@@ -35,30 +37,64 @@ A complete full-stack management system for water refilling stations built with 
 **Services:**
 - `PricingService`: Calculates sale totals and applies business rules
 - `InvoicePdfService`: Generates professional PDF invoices
-- `DataSeeder`: Seeds database with demo data on first run
+- `DataSeeder`: Seeds database with demo data including Walk-in Customer
+
+**Key Backend Features:**
+- ✅ **Inventory Management**: Automatic stock reduction on sales
+- ✅ **Stock Validation**: Prevents overselling with detailed error messages
+- ✅ **Walk-in Support**: Default client for anonymous customers
+- ✅ **Transaction Safety**: Database transactions ensure data consistency
+- ✅ **Soft Deletes**: Preserve data integrity with IsActive flags
 
 ### Frontend (Next.js 16 + Tailwind CSS v4)
 **Technology Stack:**
 - Next.js 16.1.1 with App Router and Turbopack
 - React 19 with TypeScript (strict mode)
-- Tailwind CSS v4 for styling
+- Tailwind CSS v4 with custom navy theme
+- shadcn/ui components for modern, accessible UI
+- TanStack Table for advanced data tables
+- next-themes for dark mode support
 - Axios for API calls with JWT interceptors
+- Sonner for toast notifications
+
+**Design System:**
+- **Theme**: Professional navy (#0044ad) with neutral accents
+- **Dark Mode**: Full support with optimized contrast
+- **Components**: shadcn/ui for consistent, accessible design
+- **Animations**: Smooth transitions and loading states
+- **Typography**: System fonts for optimal readability
 
 **Implemented Pages:**
-- 🔐 `/login` - JWT authentication with token storage
-- 📊 `/dashboard` - Overview with sales metrics and quick actions
-- 👥 `/clients` - Full CRUD client management with status badges
-- 📦 `/products` - Product inventory with price/stock management
-- 🛒 `/sales` - Sales listing with date filters and detail modal
-- ➕ `/sales/add` - Shopping cart-style sale creation:
-  - Multi-product selection with stock validation
-  - Dynamic quantity adjustment
+- 🔐 `/login` - JWT authentication with modern card design
+- 📊 `/dashboard` - Overview with:
+  - Animated statistics cards
+  - Quick action shortcuts
+  - Real-time data display
+- 👥 `/clients` - Full CRUD with advanced features:
+  - Searchable, sortable data table
+  - Status badges (Active/Inactive)
+  - Modal-based forms
+  - Inline editing
+- 📦 `/products` - Inventory management with:
+  - Color-coded stock levels (🔴 Low, 🟡 Medium, 🟢 In Stock)
+  - Real-time stock updates
+  - Price and quantity tracking
+  - Search and filter capabilities
+- 🛒 `/sales` - Sales management:
+  - Advanced filtering (date range, client)
+  - Detailed sale view modal
+  - Professional invoice display
+- ➕ `/sales/add` - Shopping cart experience:
+  - Multi-product selection with live stock check
+  - Dynamic quantity adjustment (+/- buttons)
   - Real-time subtotal and total calculation
-  - Optional client selection (walk-in support)
-- 📈 `/reports` - Sales reports with:
+  - Walk-in customer support (default client)
+  - Stock validation before submission
+- 📈 `/reports` - Business intelligence:
   - Date range and client filters
-  - Summary statistics (sales count, revenue, items sold)
-  - Export buttons for CSV and PDF formats
+  - Summary statistics with animated cards
+  - CSV export for Excel/accounting
+  - PDF export for presentations
 
 ### Git Workflow
 - main branch: stable, deployable
@@ -86,9 +122,10 @@ A complete full-stack management system for water refilling stations built with 
 
 **Demo Data Included:**
 - 3 users (admin, staff1, staff2)
-- 10 clients (various businesses and households)
-- 15 products (different water types and containers)
+- 11 clients including Walk-in Customer (ID: 1)
+- 15 products (various water types, containers, services)
 - 30 sales transactions with line items
+- Realistic stock levels and pricing
 
 ### AI Usage Guidelines
 - Feed instructions in modular chunks per feature
@@ -165,8 +202,11 @@ npm run dev
 App will run on: `http://localhost:3000`
 
 ### 6. Login with Demo Credentials
-- **Admin**: `admin` / `admin123`
-- **Staff**: `staff1` / `staff123`
+- **Admin**: `admin` / `admin123` (full access)
+- **Staff**: `staff1` / `staff123` (limited access)
+
+### 7. Explore the Demo
+See [DEMO_FLOW.md](./DEMO_FLOW.md) for a comprehensive demonstration guide.
 
 ## Feature Development Status
 
@@ -176,23 +216,32 @@ App will run on: `http://localhost:3000`
 - ✅ Clients CRUD API with soft-delete
 - ✅ Products CRUD API with soft-delete
 - ✅ Sales CRUD API with multi-item support
+- ✅ **Automatic inventory management**
+- ✅ **Stock validation on sale creation**
 - ✅ SaleItems automatic handling
 - ✅ PricingService for business logic
 - ✅ PDF Invoice generation (QuestPDF)
 - ✅ CSV Export for reports
 - ✅ Reports API with filters
-- ✅ Database seeding with demo data
+- ✅ Database seeding with Walk-in Customer
+- ✅ Transaction-safe operations
 - ⬜ Email invoices (future enhancement)
+- ⬜ Low stock alerts (future enhancement)
 
 ### Frontend ✅ Complete
-- ✅ Login page with JWT authentication
-- ✅ Dashboard with metrics and quick actions
-- ✅ Clients management (CRUD with modals)
-- ✅ Products management (CRUD with stock)
+- ✅ Login page with modern design
+- ✅ Dashboard with animated statistics
+- ✅ Dark mode support with theme toggle
+- ✅ Clients management (advanced data table)
+- ✅ Products management (stock indicators)
 - ✅ Sales listing with filters and details
-- ✅ Sales creation (multi-product cart)
+- ✅ Sales creation (cart with stock validation)
 - ✅ Reports page with CSV/PDF export
 - ✅ Responsive navigation and UI
+- ✅ Toast notifications (success/error)
+- ✅ Loading states and skeletons
+- ✅ Empty states with helpful messages
+- ✅ Professional minimalist design
 - ⬜ User profile/settings (future)
 - ⬜ Advanced analytics charts (future)
 
@@ -224,8 +273,12 @@ App will run on: `http://localhost:3000`
 
 ### Sales
 - `GET /api/sales` - Get sales with optional filters (startDate, endDate, clientId)
-- `GET /api/sales/{id}` - Get sale with line items
-- `POST /api/sales` - Create new sale with items
+- `GET /api/sales/{id}` - Get sale with line items and client details
+- `POST /api/sales` - Create new sale with automatic stock reduction
+  - Validates stock availability before processing
+  - Reduces product quantities automatically
+  - Supports walk-in customers (clientId can be null or 1)
+  - Returns detailed errors for insufficient stock
 - `GET /api/sales/{id}/invoice/pdf` - Download PDF invoice
 
 ### Reports
@@ -256,17 +309,69 @@ cris-bel-water/
 │   │   ├── reports/              # Reports page
 │   │   └── sales/                # Sales pages
 │   ├── components/               # Reusable components
-│   ├── lib/                      # API client (Axios)
+│   │   ├── ui/                   # shadcn/ui components
+│   │   ├── data-table/           # Advanced table components
+│   │   └── ...                   # Custom components
+│   ├── lib/                      # Utilities and API client
 │   └── public/                   # Static assets
 │
+├── DEMO_FLOW.md                  # Demonstration guide
 └── README.md                     # This file
 ```
+
+## UI/UX Highlights
+
+### Design Philosophy
+- **Minimalist**: Clean, distraction-free interface focusing on essential information
+- **Professional**: Navy (#0044ad) theme conveys trust and reliability
+- **Accessible**: High contrast ratios, keyboard navigation, screen reader support
+- **Responsive**: Mobile-first design that adapts to any screen size
+
+### Color Palette
+- **Primary Navy**: `#0044ad` - Main theme color for buttons, accents
+- **Neutral Grays**: `slate-800`, `slate-600` - Secondary elements
+- **Dark Mode**: Optimized colors for comfortable night viewing
+- **Status Colors**: Red (low stock), Yellow (medium), Green (in stock)
+
+### User Experience
+- ⚡ **Fast**: Optimized loading with skeleton states
+- 🎯 **Intuitive**: Consistent patterns across all pages
+- ✅ **Feedback**: Toast notifications for all actions
+- 🔍 **Searchable**: Quick find in all data tables
+- 📊 **Visual**: Color-coded stock levels, status badges
 
 ## Development Notes
 - Branch naming: `feature/<module-name>`, `fix/<issue>`
 - Commit frequently and push to `dev` branch first
 - Test new features with demo data before production
 - Review generated code for business logic accuracy
+- Stock levels update automatically on sale creation
+- Walk-in Customer (ID: 1) is the default for anonymous sales
+
+## Troubleshooting
+
+### Frontend shows "Network Error"
+- Ensure backend API is running on `http://localhost:5179`
+- Check CORS settings in backend `Program.cs`
+
+### Stock not updating after sale
+- Restart backend API to apply inventory management code
+- Check browser console for API errors
+
+### Dark mode not working
+- Clear browser cache and reload
+- Check if theme toggle button is visible in navbar
+
+### Database seed fails
+- Drop database: `dotnet ef database drop --force`
+- Recreate: `dotnet ef database update`
+
+## Demo & Presentation
+See [DEMO_FLOW.md](./DEMO_FLOW.md) for:
+- Complete 15-20 minute demonstration script
+- What to say at each step
+- Q&A preparation
+- Tips for successful client presentation
 
 ## License
-MIT License (optional)
+MIT License
