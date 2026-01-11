@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
+import { CurrencySelector } from "./currency-selector";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -76,6 +77,7 @@ export default function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-2">
+            <CurrencySelector />
             <ThemeToggle />
             <Button
               onClick={handleLogout}

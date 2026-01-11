@@ -9,7 +9,7 @@ Water Refilling Station Management System - Frontend application built with Next
 ## Development Commands
 
 ```bash
-# Start development server (default: http://localhost:3000)
+# Start development server (default: http://localhost:4000)
 npm run dev
 
 # Build for production
@@ -68,6 +68,25 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5179
 **Theme Variables**: Uses HSL CSS custom properties for light/dark modes
 - Defined in `app/globals.css` under `:root` and `.dark`
 - Semantic colors: --primary, --secondary, --accent, --destructive, --muted, etc.
+
+### Currency System
+
+**Base Currency**: PHP (Philippine Peso)
+- All prices in the database are stored in **PHP**
+- Default display currency is **PHP (₱)**
+- Users can switch to USD ($) for display using the currency selector in the navbar
+- Exchange rate is configurable and can be fetched live from ExchangeRate-API
+
+**Currency Context** (`lib/currency-context.tsx`):
+- `convertAmount(amount, fromCurrency = "PHP")` - Converts from PHP to selected currency
+- `formatCurrency(amount)` - Formats amount with correct symbol (₱ or $)
+- Exchange rate stored in localStorage for persistence
+- Default exchange rate: 56.5 PHP per USD
+
+**When Creating/Editing Products**:
+- If display currency is PHP: Enter price as-is (e.g., 50 = ₱50)
+- If display currency is USD: Enter price in USD, it will be converted to PHP for storage
+- Backend receives prices in PHP
 
 ### Critical Tailwind CSS 4 Compatibility
 
@@ -220,6 +239,25 @@ const columns: ColumnDef<Type>[] = [
 - Icons: Lucide React with `className="h-4 w-4"` or `h-5 w-5`
 - Spacing: `gap-4`, `gap-6`, `space-y-4`, `mb-6`
 - Container: `container mx-auto px-4 py-8`
+
+### Cursor & Interaction Enhancements
+
+**Automatic cursor styles** (defined in `globals.css`):
+- `cursor: pointer` - All buttons, links, labels, checkboxes, radio buttons, select elements
+- `cursor: not-allowed` - All disabled inputs and buttons
+- `cursor: text` - Text inputs and textareas
+- Smooth transitions on all interactive elements (0.15s ease-in-out)
+- Focus-visible outlines for accessibility
+
+**Utility classes**:
+- `.cursor-pointer` - Explicit pointer cursor
+- `.cursor-not-allowed` - Not allowed cursor
+- `.cursor-text` - Text cursor
+- `.cursor-move` - Move cursor
+- `.cursor-grab` / `.cursor-grabbing` - Drag cursors
+- `.interactive` - Combines pointer cursor + hover lift effect + smooth transitions
+
+**Usage**: All clickable elements automatically get proper cursor feedback. No need to add `cursor-pointer` manually unless overriding defaults.
 
 ### Toast Notifications
 

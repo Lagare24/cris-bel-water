@@ -84,6 +84,77 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Cursor enhancements for better UX */
+  button,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  a,
+  label[for],
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"]:disabled,
+  [type="button"]:disabled,
+  [type="submit"]:disabled,
+  [type="reset"]:disabled,
+  a[aria-disabled="true"],
+  select:disabled {
+    cursor: not-allowed;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  textarea {
+    cursor: text;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+
+  input:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Enhanced hover effects for clickable elements */
+  button:not(:disabled):hover,
+  a:hover,
+  [role="button"]:not([aria-disabled="true"]):hover {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Smooth transitions for interactive elements */
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    transition: all 0.15s ease-in-out;
+  }
+
+  /* Focus visible styles for accessibility */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 }
 
 /* Minimalist card and navigation styles */
@@ -102,6 +173,45 @@
 
   .glass-nav {
     @apply bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-600;
+  }
+
+  /* Cursor utilities */
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  .cursor-not-allowed {
+    cursor: not-allowed;
+  }
+
+  .cursor-text {
+    cursor: text;
+  }
+
+  .cursor-move {
+    cursor: move;
+  }
+
+  .cursor-grab {
+    cursor: grab;
+  }
+
+  .cursor-grabbing {
+    cursor: grabbing;
+  }
+
+  /* Interactive element utility */
+  .interactive {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .interactive:hover {
+    transform: translateY(-1px);
+  }
+
+  .interactive:active {
+    transform: translateY(0);
   }
 }
 

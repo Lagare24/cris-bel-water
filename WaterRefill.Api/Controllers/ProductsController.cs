@@ -262,6 +262,45 @@ namespace WaterRefill.Api.Controllers
                 return StatusCode(500, new { message = "Error deleting product", error = ex.Message });
             }
         }
+
+        // POST: /api/products/bulk-delete
+        // Bulk soft delete: set IsActive = false for multiple products
+        [HttpPost("bulk-delete")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> BulkDeleteProducts([FromBody] BulkDeleteDto dto)
+        {
+            if (dto == null || dto.Ids == null || dto.Ids.Count == 0)
+            {
+                return BadRequest(new { message = "Product IDs are required" });
+            }
+
+            try
+            {
+                var products = await _context.Products
+                    .Where(p => dto.Ids.Contains(p.Id))
+                    .ToListAsync();
+
+                if (products.Count == 0)
+                {
+                    return NotFound(new { message = "No products found with the provided IDs" });
+                }
+
+                foreach (var product in products)
+                {
+                    product.IsActive = false;
+                }
+
+                _context.Products.UpdateRange(products);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = $"{products.Count} product(s) deleted successfully (soft delete)", deletedCount = products.Count });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk deleting products");
+                return StatusCode(500, new { message = "Error bulk deleting products", error = ex.Message });
+            }
+        }
     }
 
     // DTOs

@@ -17,7 +17,7 @@
 > "Welcome! Today I'll show you our new Water Refilling Management System - a modern, minimalist solution designed specifically for your business operations."
 
 **Actions:**
-1. Navigate to `http://localhost:3000/login`
+1. Navigate to `http://localhost:4000/login`
 2. **Highlight the modern UI:**
    - Point out the clean, professional navy theme
    - Show the glassmorphic card design

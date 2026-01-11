@@ -15,7 +15,7 @@ builder.Services.AddDbContext<WaterRefillContext>(options =>
 
 // CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
-    ?? new[] { "http://localhost:3000" };
+    ?? new[] { "http://localhost:4000" };
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { PageHeader } from "@/components/page-header";
 import { LoadingSpinner } from "@/components/loading";
+import { useCurrency } from "@/lib/currency-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,7 @@ interface Product {
 interface Client {
   id: number;
   name: string;
+  isActive: boolean;
 }
 
 interface SaleItem {
@@ -52,6 +54,7 @@ interface SaleItem {
 
 export default function AddSalePage() {
   const router = useRouter();
+  const { convertAmount, formatCurrency } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(1); // Default to Walk-in Customer (ID 1)
@@ -245,11 +248,13 @@ export default function AddSalePage() {
                   <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id.toString()}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
+                  {clients
+                    .filter((c) => c.isActive)
+                    .map((client) => (
+                      <SelectItem key={client.id} value={client.id.toString()}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </CardContent>
@@ -279,7 +284,7 @@ export default function AddSalePage() {
                         .filter((p) => p.isActive && p.quantity > 0)
                         .map((product) => (
                           <SelectItem key={product.id} value={product.id.toString()}>
-                            {product.name} - ${product.price.toFixed(2)} (Stock:{" "}
+                            {product.name} - {formatCurrency(convertAmount(product.price))} (Stock:{" "}
                             {product.quantity})
                           </SelectItem>
                         ))}
@@ -377,10 +382,10 @@ export default function AddSalePage() {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            ${item.unitPrice.toFixed(2)}
+                            {formatCurrency(convertAmount(item.unitPrice))}
                           </TableCell>
                           <TableCell className="text-right font-semibold">
-                            ${(item.quantity * item.unitPrice).toFixed(2)}
+                            {formatCurrency(convertAmount(item.quantity * item.unitPrice))}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button
@@ -402,7 +407,7 @@ export default function AddSalePage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <span className="text-2xl font-bold text-primary">
-                            ${calculateTotal().toFixed(2)}
+                            {formatCurrency(convertAmount(calculateTotal()))}
                           </span>
                         </TableCell>
                         <TableCell></TableCell>

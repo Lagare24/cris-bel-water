@@ -75,24 +75,24 @@ public static class DataSeeder
         context.Clients.AddRange(clients);
         await context.SaveChangesAsync();
 
-        // Seed Products
+        // Seed Products (Prices in PHP - Philippine Peso)
         var products = new List<Product>
         {
-            new Product { Name = "5-Gallon Refill", Description = "Standard 5-gallon water refill", Price = 2.50m, Quantity = 500, IsActive = true },
-            new Product { Name = "3-Gallon Refill", Description = "Medium 3-gallon water refill", Price = 1.75m, Quantity = 300, IsActive = true },
-            new Product { Name = "1-Gallon Refill", Description = "Small 1-gallon water refill", Price = 0.75m, Quantity = 200, IsActive = true },
-            new Product { Name = "500ml Bottle", Description = "Purified water in 500ml bottle", Price = 0.50m, Quantity = 1000, IsActive = true },
-            new Product { Name = "1-Liter Bottle", Description = "Purified water in 1-liter bottle", Price = 0.85m, Quantity = 800, IsActive = true },
-            new Product { Name = "Empty 5-Gallon Container", Description = "New empty container for refills", Price = 15.00m, Quantity = 50, IsActive = true },
-            new Product { Name = "Dispenser Pump", Description = "Manual water dispenser pump", Price = 8.50m, Quantity = 30, IsActive = true },
-            new Product { Name = "Alkaline 5-Gallon", Description = "Alkaline water 5-gallon refill", Price = 3.50m, Quantity = 150, IsActive = true },
-            new Product { Name = "Mineral 3-Gallon", Description = "Mineral-enriched 3-gallon refill", Price = 2.25m, Quantity = 100, IsActive = true },
-            new Product { Name = "Distilled 5-Gallon", Description = "Distilled water for medical/lab use", Price = 4.00m, Quantity = 80, IsActive = true },
-            new Product { Name = "2-Gallon Jug", Description = "Portable 2-gallon water jug", Price = 1.25m, Quantity = 120, IsActive = true },
-            new Product { Name = "Cleaning Service", Description = "Container cleaning and sanitization", Price = 5.00m, Quantity = 0, IsActive = true },
-            new Product { Name = "Premium Filtered 5-Gallon", Description = "7-stage filtered premium water", Price = 3.00m, Quantity = 200, IsActive = true },
-            new Product { Name = "Water Cooler Rental", Description = "Monthly water cooler rental", Price = 12.00m, Quantity = 15, IsActive = true },
-            new Product { Name = "Vintage 5-Gallon (Discontinued)", Description = "Old product line", Price = 2.00m, Quantity = 5, IsActive = false }
+            new Product { Name = "5-Gallon Refill", Description = "Standard 5-gallon water refill", Price = 35.00m, Quantity = 500, IsActive = true },
+            new Product { Name = "3-Gallon Refill", Description = "Medium 3-gallon water refill", Price = 25.00m, Quantity = 300, IsActive = true },
+            new Product { Name = "1-Gallon Refill", Description = "Small 1-gallon water refill", Price = 15.00m, Quantity = 200, IsActive = true },
+            new Product { Name = "500ml Bottle", Description = "Purified water in 500ml bottle", Price = 10.00m, Quantity = 1000, IsActive = true },
+            new Product { Name = "1-Liter Bottle", Description = "Purified water in 1-liter bottle", Price = 18.00m, Quantity = 800, IsActive = true },
+            new Product { Name = "Empty 5-Gallon Container", Description = "New empty container for refills", Price = 250.00m, Quantity = 50, IsActive = true },
+            new Product { Name = "Dispenser Pump", Description = "Manual water dispenser pump", Price = 150.00m, Quantity = 30, IsActive = true },
+            new Product { Name = "Alkaline 5-Gallon", Description = "Alkaline water 5-gallon refill", Price = 50.00m, Quantity = 150, IsActive = true },
+            new Product { Name = "Mineral 3-Gallon", Description = "Mineral-enriched 3-gallon refill", Price = 35.00m, Quantity = 100, IsActive = true },
+            new Product { Name = "Distilled 5-Gallon", Description = "Distilled water for medical/lab use", Price = 60.00m, Quantity = 80, IsActive = true },
+            new Product { Name = "2-Gallon Jug", Description = "Portable 2-gallon water jug", Price = 20.00m, Quantity = 120, IsActive = true },
+            new Product { Name = "Cleaning Service", Description = "Container cleaning and sanitization", Price = 50.00m, Quantity = 0, IsActive = true },
+            new Product { Name = "Premium Filtered 5-Gallon", Description = "7-stage filtered premium water", Price = 45.00m, Quantity = 200, IsActive = true },
+            new Product { Name = "Water Cooler Rental", Description = "Monthly water cooler rental", Price = 200.00m, Quantity = 15, IsActive = true },
+            new Product { Name = "Vintage 5-Gallon (Discontinued)", Description = "Old product line", Price = 30.00m, Quantity = 5, IsActive = false }
         };
         context.Products.AddRange(products);
         await context.SaveChangesAsync();

@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatsCard } from "@/components/stats-card";
 import { LoadingSpinner } from "@/components/loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrency } from "@/lib/currency-context";
 import api from "@/lib/api";
 import Link from "next/link";
 import {
@@ -27,6 +28,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const { convertAmount, currency } = useCurrency();
   const [stats, setStats] = useState<DashboardStats>({
     totalSales: 0,
     totalRevenue: 0,
@@ -125,9 +127,9 @@ export default function DashboardPage() {
               />
               <StatsCard
                 title="Total Revenue"
-                value={stats.totalRevenue.toFixed(2)}
+                value={convertAmount(stats.totalRevenue).toFixed(2)}
                 icon={DollarSign}
-                prefix="$"
+                prefix={currency === "USD" ? "$" : "₱"}
                 variant="slate"
               />
               <StatsCard
@@ -152,7 +154,7 @@ export default function DashboardPage() {
                   <Link
                     key={action.href}
                     href={action.href}
-                    className={`group glass-card p-8 rounded-xl hover:shadow-2xl transition-all duration-300 border-2 border-transparent ${action.hoverColor} hover:scale-[1.02]`}
+                    className={`group glass-card p-8 rounded-xl hover:shadow-2xl transition-all duration-300 border-2 border-transparent ${action.hoverColor} hover:scale-[1.02] cursor-pointer`}
                   >
                     <div className="flex items-center space-x-4">
                       <div

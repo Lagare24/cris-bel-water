@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { PageHeader } from "@/components/page-header";
 import { StatsCard } from "@/components/stats-card";
+import { useCurrency } from "@/lib/currency-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,7 @@ interface ReportData {
 }
 
 export default function ReportsPage() {
+  const { convertAmount, currency } = useCurrency();
   const [clients, setClients] = useState<Client[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -221,8 +223,8 @@ export default function ReportsPage() {
             />
             <StatsCard
               title="Total Revenue"
-              value={reportData.totalRevenue}
-              prefix="$"
+              value={convertAmount(reportData.totalRevenue).toFixed(2)}
+              prefix={currency === "USD" ? "$" : "₱"}
               icon={DollarSign}
               variant="slate"
             />

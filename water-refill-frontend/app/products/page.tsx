@@ -8,8 +8,10 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { LoadingSpinner } from "@/components/loading";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+import { useCurrency } from "@/lib/currency-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,9 +24,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertCircle, Filter } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Product {
   id: number;
@@ -36,11 +46,17 @@ interface Product {
 }
 
 export default function ProductsPage() {
+  const { convertAmount, formatCurrency } = useCurrency();
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [stockLevelFilter, setStockLevelFilter] = useState<string>("all");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -53,6 +69,10 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    applyFilters();
+  }, [products, statusFilter, stockLevelFilter]);
+
   const fetchProducts = async () => {
     try {
       const response = await api.get("/api/products");
@@ -63,6 +83,33 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...products];
+
+    // Status filter
+    if (statusFilter === "active") {
+      filtered = filtered.filter((product) => product.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter((product) => !product.isActive);
+    }
+
+    // Stock level filter
+    if (stockLevelFilter === "low") {
+      filtered = filtered.filter((product) => product.quantity < 10);
+    } else if (stockLevelFilter === "medium") {
+      filtered = filtered.filter((product) => product.quantity >= 10 && product.quantity < 50);
+    } else if (stockLevelFilter === "high") {
+      filtered = filtered.filter((product) => product.quantity >= 50);
+    }
+
+    setFilteredProducts(filtered);
+  };
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setStockLevelFilter("all");
   };
 
   const handleOpenDialog = (product?: Product) => {
@@ -131,6 +178,23 @@ export default function ProductsPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    try {
+      const response = await api.post("/api/products/bulk-delete", {
+        ids: selectedIds,
+      });
+      toast.success(response.data?.message || `${selectedIds.length} product(s) deleted successfully`);
+      setSelectedIds([]);
+      fetchProducts();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to delete products");
+    } finally {
+      setShowBulkDeleteDialog(false);
+    }
+  };
+
   const getStockBadge = (quantity: number) => {
     if (quantity < 10) {
       return (
@@ -152,6 +216,43 @@ export default function ProductsPage() {
   };
 
   const columns: ColumnDef<Product>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => {
+            table.toggleAllPageRowsSelected(!!value);
+            if (value) {
+              const allIds = table.getRowModel().rows.map((row) => row.original.id);
+              setSelectedIds(allIds);
+            } else {
+              setSelectedIds([]);
+            }
+          }}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => {
+            row.toggleSelected(!!value);
+            if (value) {
+              setSelectedIds([...selectedIds, row.original.id]);
+            } else {
+              setSelectedIds(selectedIds.filter((id) => id !== row.original.id));
+            }
+          }}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "name",
       header: ({ column }) => (
@@ -177,9 +278,10 @@ export default function ProductsPage() {
       ),
       cell: ({ row }) => {
         const price = parseFloat(row.getValue("price"));
+        const convertedPrice = convertAmount(price);
         return (
           <div className="font-semibold">
-            ${price.toFixed(2)}
+            {formatCurrency(convertedPrice)}
           </div>
         );
       },
@@ -246,19 +348,77 @@ export default function ProductsPage() {
           title="Products"
           description="Manage your inventory and pricing"
           action={
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
+            <div className="flex gap-2">
+              {selectedIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected ({selectedIds.length})
+                </Button>
+              )}
+              <Button onClick={() => handleOpenDialog()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </div>
           }
         />
+
+        {/* Filters */}
+        <Card className="glass-card mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <Filter className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="status-filter">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger id="status-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active Only</SelectItem>
+                      <SelectItem value="inactive">Inactive Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stock-filter">Stock Level</Label>
+                  <Select value={stockLevelFilter} onValueChange={setStockLevelFilter}>
+                    <SelectTrigger id="stock-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="low">Low Stock (&lt; 10)</SelectItem>
+                      <SelectItem value="medium">Medium Stock (10-49)</SelectItem>
+                      <SelectItem value="high">In Stock (≥ 50)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={clearFilters}
+                    className="w-full"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {loading ? (
           <LoadingSpinner />
         ) : (
           <DataTable
             columns={columns}
-            data={products}
+            data={filteredProducts}
             searchKey="name"
             searchPlaceholder="Search products..."
           />
@@ -365,6 +525,17 @@ export default function ProductsPage() {
           description="Are you sure you want to delete this product? This action cannot be undone."
           onConfirm={handleDelete}
           confirmText="Delete"
+          variant="destructive"
+        />
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+          title="Delete Multiple Products"
+          description={`Are you sure you want to delete ${selectedIds.length} product(s)? This action cannot be undone.`}
+          onConfirm={handleBulkDelete}
+          confirmText="Delete All"
           variant="destructive"
         />
       </div>

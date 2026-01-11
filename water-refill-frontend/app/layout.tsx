@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CurrencyProvider } from "@/lib/currency-context";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -22,8 +23,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster position="top-right" richColors />
+          <CurrencyProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </CurrencyProvider>
         </ThemeProvider>
       </body>
     </html>

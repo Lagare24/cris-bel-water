@@ -199,7 +199,7 @@ Swagger UI: `http://localhost:5000/swagger`
 cd water-refill-frontend
 npm run dev
 ```
-App will run on: `http://localhost:3000`
+App will run on: `http://localhost:4000`
 
 ### 6. Login with Demo Credentials
 - **Admin**: `admin` / `admin123` (full access)

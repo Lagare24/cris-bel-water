@@ -228,6 +228,12 @@ namespace WaterRefill.Api.Controllers
         {
             try
             {
+                // Prevent deletion of Walk-in Customer (ID: 1)
+                if (id == 1)
+                {
+                    return BadRequest(new { message = "Cannot delete Walk-in Customer. This is a default system client." });
+                }
+
                 var client = await _context.Clients.FindAsync(id);
                 if (client == null)
                 {
@@ -244,6 +250,57 @@ namespace WaterRefill.Api.Controllers
             {
                 _logger.LogError(ex, $"Error deleting client with ID {id}");
                 return StatusCode(500, new { message = "Error deleting client", error = ex.Message });
+            }
+        }
+
+        // POST: api/clients/bulk-delete
+        // Bulk soft delete: set IsActive = false for multiple clients
+        [HttpPost("bulk-delete")]
+        public async Task<IActionResult> BulkDeleteClients([FromBody] BulkDeleteDto dto)
+        {
+            if (dto == null || dto.Ids == null || dto.Ids.Count == 0)
+            {
+                return BadRequest(new { message = "Client IDs are required" });
+            }
+
+            try
+            {
+                // Filter out Walk-in Customer (ID: 1) from deletion
+                var validIds = dto.Ids.Where(id => id != 1).ToList();
+                var skippedWalkIn = dto.Ids.Contains(1);
+
+                if (validIds.Count == 0)
+                {
+                    return BadRequest(new { message = "Cannot delete Walk-in Customer. This is a default system client." });
+                }
+
+                var clients = await _context.Clients
+                    .Where(c => validIds.Contains(c.Id))
+                    .ToListAsync();
+
+                if (clients.Count == 0)
+                {
+                    return NotFound(new { message = "No clients found with the provided IDs" });
+                }
+
+                foreach (var client in clients)
+                {
+                    client.IsActive = false;
+                }
+
+                _context.Clients.UpdateRange(clients);
+                await _context.SaveChangesAsync();
+
+                var message = skippedWalkIn
+                    ? $"{clients.Count} client(s) deactivated successfully. Walk-in Customer was skipped (cannot be deleted)."
+                    : $"{clients.Count} client(s) deactivated successfully";
+
+                return Ok(new { message, deletedCount = clients.Count, skippedWalkIn });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk deleting clients");
+                return StatusCode(500, new { message = "Error bulk deleting clients", error = ex.Message });
             }
         }
 
@@ -391,5 +448,10 @@ namespace WaterRefill.Api.Controllers
     {
         public int ProductId { get; set; }
         public decimal Price { get; set; }
+    }
+
+    public class BulkDeleteDto
+    {
+        public List<int> Ids { get; set; } = new();
     }
 }

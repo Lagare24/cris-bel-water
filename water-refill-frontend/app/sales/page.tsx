@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { LoadingSpinner } from "@/components/loading";
+import { useCurrency } from "@/lib/currency-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,13 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Client {
   id: number;
@@ -54,15 +62,41 @@ interface SaleItem {
 }
 
 export default function SalesPage() {
+  const { convertAmount, formatCurrency } = useCurrency();
   const [sales, setSales] = useState<Sale[]>([]);
+  const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<string>("all");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   useEffect(() => {
-    fetchSales();
+    fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    applyClientSideFilters();
+  }, [sales, selectedClientId, minAmount, maxAmount]);
+
+  const fetchInitialData = async () => {
+    try {
+      const [salesRes, clientsRes] = await Promise.all([
+        api.get("/api/sales"),
+        api.get("/api/clients"),
+      ]);
+      setSales(salesRes.data || []);
+      setClients(clientsRes.data || []);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      toast.error("Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchSales = async () => {
     try {
@@ -80,6 +114,28 @@ export default function SalesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyClientSideFilters = () => {
+    let filtered = [...sales];
+
+    // Client filter
+    if (selectedClientId !== "all") {
+      const clientId = parseInt(selectedClientId);
+      filtered = filtered.filter((sale) => sale.client?.id === clientId);
+    }
+
+    // Amount range filter
+    if (minAmount) {
+      const min = parseFloat(minAmount);
+      filtered = filtered.filter((sale) => sale.totalAmount >= min);
+    }
+    if (maxAmount) {
+      const max = parseFloat(maxAmount);
+      filtered = filtered.filter((sale) => sale.totalAmount <= max);
+    }
+
+    setFilteredSales(filtered);
   };
 
   const handleFilter = () => {
@@ -100,6 +156,9 @@ export default function SalesPage() {
   const handleClearFilters = () => {
     setStartDate("");
     setEndDate("");
+    setSelectedClientId("all");
+    setMinAmount("");
+    setMaxAmount("");
     setLoading(true);
     setTimeout(() => fetchSales(), 0);
   };
@@ -160,9 +219,10 @@ export default function SalesPage() {
       ),
       cell: ({ row }) => {
         const amount = parseFloat(row.getValue("totalAmount"));
+        const convertedAmount = convertAmount(amount);
         return (
           <div className="font-semibold text-primary">
-            ${amount.toFixed(2)}
+            {formatCurrency(convertedAmount)}
           </div>
         );
       },
@@ -214,34 +274,79 @@ export default function SalesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-              <div className="flex items-end gap-2">
-                <Button onClick={handleFilter} className="flex-1">
-                  Apply Filter
-                </Button>
-                {(startDate || endDate) && (
-                  <Button variant="outline" onClick={handleClearFilters}>
-                    Clear
+            <div className="space-y-4">
+              {/* Date Range Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleFilter} className="w-full">
+                    Apply Date Filter
                   </Button>
-                )}
+                </div>
+              </div>
+
+              {/* Client and Amount Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="client-filter">Client</Label>
+                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                    <SelectTrigger id="client-filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Clients</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id.toString()}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="minAmount">Min Amount</Label>
+                  <Input
+                    id="minAmount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={minAmount}
+                    onChange={(e) => setMinAmount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxAmount">Max Amount</Label>
+                  <Input
+                    id="maxAmount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={maxAmount}
+                    onChange={(e) => setMaxAmount(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button variant="outline" onClick={handleClearFilters} className="w-full">
+                    Clear All Filters
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -251,7 +356,7 @@ export default function SalesPage() {
         {loading ? (
           <LoadingSpinner />
         ) : (
-          <DataTable columns={columns} data={sales} />
+          <DataTable columns={columns} data={filteredSales} />
         )}
 
         {/* Details Dialog */}
@@ -302,10 +407,10 @@ export default function SalesPage() {
                               {item.quantity}
                             </TableCell>
                             <TableCell className="text-right">
-                              ${item.unitPrice.toFixed(2)}
+                              {formatCurrency(convertAmount(item.unitPrice))}
                             </TableCell>
                             <TableCell className="text-right font-semibold">
-                              ${(item.quantity * item.unitPrice).toFixed(2)}
+                              {formatCurrency(convertAmount(item.quantity * item.unitPrice))}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -318,7 +423,7 @@ export default function SalesPage() {
                 <div className="flex justify-between items-center pt-4 border-t">
                   <span className="text-lg font-semibold">Total Amount:</span>
                   <span className="text-2xl font-bold text-primary">
-                    ${selectedSale.totalAmount.toFixed(2)}
+                    {formatCurrency(convertAmount(selectedSale.totalAmount))}
                   </span>
                 </div>
               </div>
