@@ -17,14 +17,13 @@ interface CurrencyContextType {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-const DEFAULT_EXCHANGE_RATE = 56.5; // Default PHP to USD rate
+const DEFAULT_EXCHANGE_RATE = 56.5;
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>("PHP");
   const [exchangeRate, setExchangeRateState] = useState<number>(DEFAULT_EXCHANGE_RATE);
   const [lastFetched, setLastFetched] = useState<string | null>(null);
 
-  // Load from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedCurrency = localStorage.getItem("currency") as Currency;
@@ -53,10 +52,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("exchangeRate", rate.toString());
   };
 
-  // Fetch live exchange rate from API
   const fetchLiveRate = async (): Promise<{ rate: number; timestamp: string }> => {
     try {
-      // Using ExchangeRate-API (free, no API key required)
       const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
 
       if (!response.ok) {
@@ -72,7 +69,6 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
       const timestamp = new Date().toISOString();
 
-      // Update state and localStorage
       setExchangeRateState(phpRate);
       setLastFetched(timestamp);
       localStorage.setItem("exchangeRate", phpRate.toString());
@@ -85,25 +81,21 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Format currency with proper symbol and decimals
   const formatCurrency = (amount: number): string => {
     const symbol = currency === "USD" ? "$" : "₱";
     const formattedAmount = amount.toFixed(2);
     return `${symbol}${formattedAmount}`;
   };
 
-  // Convert amount from PHP (base currency in DB) to selected currency
   const convertAmount = (amount: number, fromCurrency: Currency = "PHP"): number => {
     if (currency === fromCurrency) {
       return amount;
     }
 
-    // Convert from PHP to USD
     if (currency === "USD" && fromCurrency === "PHP") {
       return amount / exchangeRate;
     }
 
-    // Convert from USD to PHP
     if (currency === "PHP" && fromCurrency === "USD") {
       return amount * exchangeRate;
     }

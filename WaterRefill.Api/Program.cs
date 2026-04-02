@@ -6,8 +6,12 @@ using WaterRefill.Api.Data;
 using WaterRefill.Api.Services;
 using System.Security.Claims;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure QuestPDF license mode at startup so PDF generation can run.
+QuestPDF.Settings.License = LicenseType.Community;
 
 // Add DbContext
 builder.Services.AddDbContext<WaterRefillContext>(options =>

@@ -105,10 +105,13 @@ namespace WaterRefill.Api.Controllers
             [FromQuery] DateTime? startDate,
             [FromQuery] DateTime? endDate,
             [FromQuery] int? clientId,
-            [FromQuery] int? staffId)
+            [FromQuery] int? staffId,
+            [FromQuery] string currency = "PHP",
+            [FromQuery] decimal exchangeRate = 56.5m)
         {
             try
             {
+                var normalizedCurrency = NormalizeCurrency(currency);
                 var query = _context.Sales
                     .Include(s => s.Client)
                     .AsQueryable();
@@ -140,11 +143,12 @@ namespace WaterRefill.Api.Controllers
 
                 // Generate CSV
                 var sb = new StringBuilder();
-                sb.AppendLine("Sale ID,Sale Date,Client Name,Item Count,Total Amount");
+                sb.AppendLine("Sale ID,Sale Date,Client Name,Item Count,Currency,Total Amount");
 
                 foreach (var sale in sales)
                 {
-                    sb.AppendLine($"{sale.Id},{sale.SaleDate:yyyy-MM-dd},{EscapeCsvField(sale.Client?.Name ?? "Walk-in")},{sale.SaleItems.Count},{sale.TotalAmount:F2}");
+                    var convertedTotal = ConvertAmount(sale.TotalAmount, normalizedCurrency, exchangeRate);
+                    sb.AppendLine($"{sale.Id},{sale.SaleDate:yyyy-MM-dd},{EscapeCsvField(sale.Client?.Name ?? "Walk-in")},{sale.SaleItems.Count},{normalizedCurrency},{convertedTotal:F2}");
                 }
 
                 var csv = sb.ToString();
@@ -165,10 +169,13 @@ namespace WaterRefill.Api.Controllers
             [FromQuery] DateTime? startDate,
             [FromQuery] DateTime? endDate,
             [FromQuery] int? clientId,
-            [FromQuery] int? staffId)
+            [FromQuery] int? staffId,
+            [FromQuery] string currency = "PHP",
+            [FromQuery] decimal exchangeRate = 56.5m)
         {
             try
             {
+                var normalizedCurrency = NormalizeCurrency(currency);
                 var query = _context.Sales
                     .Include(s => s.Client)
                     .AsQueryable();
@@ -235,7 +242,7 @@ namespace WaterRefill.Api.Controllers
                                 {
                                     row.RelativeItem().Text($"Total Sales: {totalSales}").Bold();
                                     row.RelativeItem().Text($"Total Items: {totalItemsSold}").Bold();
-                                    row.RelativeItem().Text($"Total Revenue: ${totalRevenue:F2}").Bold();
+                                    row.RelativeItem().Text($"Total Revenue: {FormatCurrency(totalRevenue, normalizedCurrency, exchangeRate)}").Bold();
                                 });
                             });
 
@@ -266,7 +273,7 @@ namespace WaterRefill.Api.Controllers
                                                 r.RelativeItem(1).Text(sale.SaleDate.ToString("yyyy-MM-dd")).FontSize(9);
                                                 r.RelativeItem(2).Text(sale.Client?.Name ?? "Walk-in").FontSize(9);
                                                 r.RelativeItem(1).Text(sale.SaleItems.Count.ToString()).FontSize(9);
-                                                r.RelativeItem(1).Text($"${sale.TotalAmount:F2}").FontSize(9);
+                                                r.RelativeItem(1).Text(FormatCurrency(sale.TotalAmount, normalizedCurrency, exchangeRate)).FontSize(9);
                                             });
                                         });
                                     }
@@ -480,6 +487,26 @@ namespace WaterRefill.Api.Controllers
             }
 
             return field;
+        }
+
+        private static string NormalizeCurrency(string? currency) =>
+            string.Equals(currency, "USD", StringComparison.OrdinalIgnoreCase) ? "USD" : "PHP";
+
+        private static decimal ConvertAmount(decimal amount, string currency, decimal exchangeRate)
+        {
+            if (currency == "USD" && exchangeRate > 0)
+            {
+                return amount / exchangeRate;
+            }
+
+            return amount;
+        }
+
+        private static string FormatCurrency(decimal amount, string currency, decimal exchangeRate)
+        {
+            var converted = ConvertAmount(amount, currency, exchangeRate);
+            var symbol = currency == "USD" ? "$" : "₱";
+            return $"{symbol}{converted:F2}";
         }
     }
 

@@ -156,7 +156,7 @@ namespace WaterRefill.Api.Controllers
 
         // GET: /api/invoices/{id}/pdf
         [HttpGet("{id}/pdf")]
-        public async Task<IActionResult> GetInvoicePdf(int id)
+        public async Task<IActionResult> GetInvoicePdf(int id, [FromQuery] string currency = "PHP", [FromQuery] decimal exchangeRate = 56.5m)
         {
             try
             {
@@ -170,7 +170,7 @@ namespace WaterRefill.Api.Controllers
                     return NotFound(new { message = $"Invoice with ID {id} not found" });
                 }
 
-                var pdfBytes = _pdfService.Generate(invoice);
+                var pdfBytes = _pdfService.Generate(invoice, currency, exchangeRate);
                 var fileName = $"Invoice-{invoice.InvoiceNumber}.pdf";
                 return File(pdfBytes, "application/pdf", fileName);
             }

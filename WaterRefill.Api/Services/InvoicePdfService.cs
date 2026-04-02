@@ -7,7 +7,7 @@ namespace WaterRefill.Api.Services
 {
     public class InvoicePdfService
     {
-        public byte[] Generate(Invoice invoice)
+        public byte[] Generate(Invoice invoice, string currency = "PHP", decimal exchangeRate = 56.5m)
         {
             var companyName = "Water Refilling Station";
             var companyAddress = "123 Main St, City";
@@ -15,6 +15,7 @@ namespace WaterRefill.Api.Services
 
             var items = invoice.Items ?? new List<InvoiceItem>();
             var totalAmount = items.Sum(i => i.LineTotal);
+            var normalizedCurrency = NormalizeCurrency(currency);
 
             var document = Document.Create(container =>
             {
@@ -63,7 +64,10 @@ namespace WaterRefill.Api.Services
                             col.Item().Element(ItemsTable);
 
                             // Total summary
-                            col.Item().AlignRight().Text($"Total: {totalAmount:C}").SemiBold().FontSize(14);
+                            col.Item().AlignRight()
+                                .Text($"Total: {FormatCurrency(totalAmount, normalizedCurrency, exchangeRate)}")
+                                .SemiBold()
+                                .FontSize(14);
                         });
                     }
 
@@ -119,8 +123,8 @@ namespace WaterRefill.Api.Services
                             {
                                 table.Cell().Element(Cell).Text(item.ProductName);
                                 table.Cell().Element(Cell).Text(item.Quantity.ToString());
-                                table.Cell().Element(Cell).Text(item.UnitPrice.ToString("C"));
-                                table.Cell().Element(Cell).Text(item.LineTotal.ToString("C"));
+                                table.Cell().Element(Cell).Text(FormatCurrency(item.UnitPrice, normalizedCurrency, exchangeRate));
+                                table.Cell().Element(Cell).Text(FormatCurrency(item.LineTotal, normalizedCurrency, exchangeRate));
                             }
 
                             static IContainer Cell(IContainer container) =>
@@ -144,6 +148,26 @@ namespace WaterRefill.Api.Services
             });
 
             return document.GeneratePdf();
+        }
+
+        private static string NormalizeCurrency(string? currency) =>
+            string.Equals(currency, "USD", StringComparison.OrdinalIgnoreCase) ? "USD" : "PHP";
+
+        private static decimal ConvertAmount(decimal amount, string currency, decimal exchangeRate)
+        {
+            if (currency == "USD" && exchangeRate > 0)
+            {
+                return amount / exchangeRate;
+            }
+
+            return amount;
+        }
+
+        private static string FormatCurrency(decimal amount, string currency, decimal exchangeRate)
+        {
+            var converted = ConvertAmount(amount, currency, exchangeRate);
+            var symbol = currency == "USD" ? "$" : "₱";
+            return $"{symbol}{converted:F2}";
         }
     }
 }
