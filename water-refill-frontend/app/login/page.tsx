@@ -136,26 +136,6 @@ export default function LoginPage() {
                 "Sign In"
               )}
             </Button>
-
-            <div className="pt-4 border-t border-border">
-              <p className="text-center text-sm text-muted-foreground">
-                <span className="font-semibold">Demo Credentials:</span>
-              </p>
-              <div className="mt-2 space-y-1 text-xs text-muted-foreground text-center">
-                <p>
-                  Admin:{" "}
-                  <span className="font-mono bg-muted px-2 py-1 rounded">
-                    admin / admin123
-                  </span>
-                </p>
-                <p>
-                  Staff:{" "}
-                  <span className="font-mono bg-muted px-2 py-1 rounded">
-                    staff1 / staff123
-                  </span>
-                </p>
-              </div>
-            </div>
           </form>
         </div>
       </div>
