@@ -40,10 +40,10 @@ Encryption: Disabled
 
 ### Step 1: Upload to FreeASPHosting
 1. Go to: https://freeasphosting.net/cp/fileManager.aspx
-2. Create folder: `/api` (or `/backend`)
+2. Navigate to **root folder** (public_html or domain root)
 3. Upload `WaterRefill.Api.zip`
 4. Right-click zip → Extract
-5. Extract to same folder
+5. Extract to **root** (not in /api subfolder)
 
 ### Step 2: Verify Files Uploaded
 Navigate to the extracted folder and verify:
@@ -72,7 +72,7 @@ Update your frontend to point to the hosted API:
 
 ```typescript
 // next.config.ts or environment variable
-NEXT_PUBLIC_API_BASE_URL=https://LagarePoS.bsite.net/api
+NEXT_PUBLIC_API_BASE_URL=https://LagarePoS.bsite.net
 ```
 
 ### Step 5: Configure Startup
@@ -100,7 +100,7 @@ FreeASPHosting uses `web.config` to start the application automatically:
 ### Access Swagger UI
 Once deployed, access the interactive API documentation at:
 ```
-https://LagarePoS.bsite.net/api/swagger
+https://LagarePoS.bsite.net/swagger
 ```
 
 ### Testing with Swagger
@@ -120,35 +120,35 @@ https://LagarePoS.bsite.net/api/swagger
 ### Available Endpoints
 
 #### Authentication
-- `POST /api/auth/login` - User login (returns JWT token)
+- `POST /auth/login` - User login (returns JWT token)
 
 #### Clients
-- `GET /api/clients` - List all clients
-- `POST /api/clients` - Create new client
-- `GET /api/clients/{id}` - Get client details
-- `PUT /api/clients/{id}` - Update client
-- `DELETE /api/clients/{id}` - Delete client
+- `GET /clients` - List all clients
+- `POST /clients` - Create new client
+- `GET /clients/{id}` - Get client details
+- `PUT /clients/{id}` - Update client
+- `DELETE /clients/{id}` - Delete client
 
 #### Products
-- `GET /api/products` - List products
-- `POST /api/products` - Create product
-- `PUT /api/products/{id}` - Update product
-- `DELETE /api/products/{id}` - Delete product
+- `GET /products` - List products
+- `POST /products` - Create product
+- `PUT /products/{id}` - Update product
+- `DELETE /products/{id}` - Delete product
 
 #### Sales
-- `GET /api/sales` - List sales
-- `POST /api/sales` - Create sale
-- `GET /api/sales/{id}` - Get sale details
+- `GET /sales` - List sales
+- `POST /sales` - Create sale
+- `GET /sales/{id}` - Get sale details
 
 #### Invoices
-- `GET /api/invoices` - List invoices
-- `POST /api/invoices` - Create invoice
-- `GET /api/invoices/{id}/pdf` - Download invoice PDF
+- `GET /invoices` - List invoices
+- `POST /invoices` - Create invoice
+- `GET /invoices/{id}/pdf` - Download invoice PDF
 
 #### Reports
-- `GET /api/reports/sales` - Sales analytics
-- `GET /api/reports/sales/csv` - Export to CSV
-- `GET /api/reports/sales/pdf` - Export to PDF
+- `GET /reports/sales` - Sales analytics
+- `GET /reports/sales/csv` - Export to CSV
+- `GET /reports/sales/pdf` - Export to PDF
 
 ---
 
@@ -193,7 +193,7 @@ Allowed frontend domains:
 ### Health Checks
 Monitor API health:
 ```
-GET https://LagarePoS.bsite.net/api/health
+GET https://LagarePoS.bsite.net/health
 ```
 
 ---

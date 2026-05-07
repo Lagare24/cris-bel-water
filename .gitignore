@@ -420,3 +420,4 @@ cris-bel-water.code-workspace
 .vscode/settings.json
 test.txt
 water-refill-frontend/tsconfig.tsbuildinfo
+WaterRefill.Api.zip
