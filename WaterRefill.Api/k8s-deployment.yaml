@@ -1,0 +1,245 @@
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: waterrefill
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waterrefill-config
+  namespace: waterrefill
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  Logging__LogLevel__Default: "Information"
+  Logging__LogLevel__Microsoft.AspNetCore: "Warning"
+
+---
+# Secret for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: waterrefill-secrets
+  namespace: waterrefill
+type: Opaque
+stringData:
+  DB_HOST: "your-postgres-host"
+  DB_PORT: "5432"
+  DB_NAME: "waterrefill"
+  DB_USER: "your-db-user"
+  DB_PASSWORD: "your-secure-password"
+  JWT_KEY: "your-super-secret-jwt-key-min-32-chars"
+  ConnectionStrings__DefaultConnection: "Host=your-postgres-host;Port=5432;Database=waterrefill;Username=your-db-user;Password=your-secure-password;SSL Mode=Require;"
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: waterrefill-api-service
+  namespace: waterrefill
+  labels:
+    app: waterrefill-api
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 8080
+      protocol: TCP
+      name: https
+  selector:
+    app: waterrefill-api
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waterrefill-api
+  namespace: waterrefill
+  labels:
+    app: waterrefill-api
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: waterrefill-api
+  template:
+    metadata:
+      labels:
+        app: waterrefill-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: waterrefill-api
+      containers:
+        - name: waterrefill-api
+          image: "{region}.ocir.io/{namespace}/waterrefill-api:1.0.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: waterrefill-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ASPNETCORE_URLS
+              value: "http://0.0.0.0:8080"
+            - name: PORT
+              value: "8080"
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: waterrefill-secrets
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: waterrefill-secrets
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: waterrefill-secrets
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: waterrefill-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: waterrefill-secrets
+                  key: DB_PASSWORD
+            - name: JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: waterrefill-secrets
+                  key: JWT_KEY
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: waterrefill-secrets
+                  key: ConnectionStrings__DefaultConnection
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+---
+# HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: waterrefill-api-hpa
+  namespace: waterrefill
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: waterrefill-api
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: waterrefill-api
+  namespace: waterrefill
+
+---
+# Ingress (optional - for advanced routing)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: waterrefill-api-ingress
+  namespace: waterrefill
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+    - hosts:
+        - api.waterrefill.example.com
+      secretName: waterrefill-api-tls
+  rules:
+    - host: api.waterrefill.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: waterrefill-api-service
+                port:
+                  number: 80

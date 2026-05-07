@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 
 // Default to backend dev port from launchSettings.json
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5179";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 console.log("🔧 [API] Initializing API client with base URL:", API_BASE);
 

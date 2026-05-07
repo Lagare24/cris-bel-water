@@ -1,0 +1,9 @@
+{
+  "runtime": {
+    "majorVersion": "10.0"
+  },
+  "command": "dotnet WaterRefill.Api.dll",
+  "release": {
+    "build": "dotnet publish -c Release -r linux-x64 --self-contained"
+  }
+}

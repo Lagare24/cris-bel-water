@@ -224,7 +224,7 @@ export default function ReportsPage() {
     params.append("exchangeRate", exchangeRate.toString());
 
     const token = localStorage.getItem("token");
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5179"}/api/reports/sales/csv?${params.toString()}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/reports/sales/csv?${params.toString()}`;
 
     toast.promise(
       fetch(url, {
@@ -259,7 +259,7 @@ export default function ReportsPage() {
     params.append("exchangeRate", exchangeRate.toString());
 
     const token = localStorage.getItem("token");
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5179"}/api/reports/sales/pdf?${params.toString()}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/api/reports/sales/pdf?${params.toString()}`;
 
     toast.promise(
       fetch(url, {
@@ -330,7 +330,7 @@ export default function ReportsPage() {
 
   const handleExportSalePdf = async (saleId: number) => {
     const token = localStorage.getItem("token");
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5179";
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
     toast.promise(
       (async () => {

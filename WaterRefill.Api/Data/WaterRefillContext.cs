@@ -88,10 +88,7 @@ namespace WaterRefill.Api.Data
             entity.Property(x => x.Price).HasPrecision(18, 2).IsRequired();
             entity.Property(x => x.IsActive).HasDefaultValue(true);
 
-            entity.Property(x => x.CreatedAt)
-                  .HasColumnType("datetime2");
-            entity.Property(x => x.UpdatedAt)
-                  .HasColumnType("datetime2");
+            // CreatedAt and UpdatedAt use default datetime mapping (timestamp with time zone in PostgreSQL)
 
             entity.HasIndex(x => new { x.ClientId, x.ProductId }).IsUnique();
 

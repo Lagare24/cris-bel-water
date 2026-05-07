@@ -5,7 +5,6 @@ import Navbar from "@/components/Navbar";
 import { PageHeader } from "@/components/page-header";
 import { StatsCard } from "@/components/stats-card";
 import { LoadingSpinner } from "@/components/loading";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCurrency } from "@/lib/currency-context";
 import api from "@/lib/api";
 import Link from "next/link";
