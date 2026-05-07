@@ -15,7 +15,7 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 // Add DbContext
 builder.Services.AddDbContext<WaterRefillContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // CORS
 var allowedOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()

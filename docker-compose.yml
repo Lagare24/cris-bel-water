@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: waterrefill-postgres
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: waterrefill-mssql
     environment:
-      POSTGRES_DB: waterrefill
-      POSTGRES_USER: waterrefill_user
-      POSTGRES_PASSWORD: waterrefill_password
+      SA_PASSWORD: "YourPassword123!"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
     ports:
-      - "5432:5432"
+      - "1433:1433"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mssql_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U waterrefill_user -d waterrefill"]
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourPassword123!", "-Q", "SELECT 1"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres_data:
+  mssql_data:
