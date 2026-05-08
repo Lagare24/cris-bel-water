@@ -92,11 +92,22 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 var app = builder.Build();
 
-// Seed database with demo data
+// Apply migrations and seed database with demo data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<WaterRefillContext>();
-    await DataSeeder.SeedDataAsync(context);
+    try
+    {
+        // Apply pending migrations
+        await context.Database.MigrateAsync();
+        // Seed demo data
+        await DataSeeder.SeedDataAsync(context);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error during database migration or seeding: {ex.Message}");
+        throw;
+    }
 }
 
 app.UseCors();
