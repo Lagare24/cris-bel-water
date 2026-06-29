@@ -175,6 +175,20 @@ export default function ReportsPage() {
 
   const hasClientFilter = selectedClientId !== "all";
 
+  const formatFilterDate = (value: string) => {
+    if (!value) return "";
+
+    // Date input returns yyyy-mm-dd; parse manually to avoid timezone shifts.
+    const [year, month, day] = value.split("-").map(Number);
+    const parsedDate = new Date(year, (month || 1) - 1, day || 1);
+
+    return parsedDate.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   const fetchClients = async () => {
     try {
       const response = await api.get("/api/clients");
@@ -474,7 +488,7 @@ export default function ReportsPage() {
               data={trendData}
               dataKey="revenue"
               xAxisKey="date"
-              color="#0044ad"
+              color="hsl(var(--primary))"
             />
 
             <Card className="glass-card">
@@ -501,7 +515,7 @@ export default function ReportsPage() {
                   <p className="text-sm text-muted-foreground mb-1">Date range</p>
                   <p className="font-medium flex items-center gap-2">
                     <CalendarRange className="h-4 w-4" />
-                    {startDate || "Any start"} to {endDate || "Any end"}
+                    {startDate ? formatFilterDate(startDate) : "Any start"} to {endDate ? formatFilterDate(endDate) : "Any end"}
                   </p>
                 </div>
               </CardContent>
@@ -522,7 +536,7 @@ export default function ReportsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                   {topItems.map((item) => (
                     <div key={item.name} className="rounded-lg border bg-background/60 p-4">
-                      <p className="font-medium line-clamp-2 min-h-[3rem]">{item.name}</p>
+                      <p className="font-medium line-clamp-2 min-h-12">{item.name}</p>
                       <p className="text-sm text-muted-foreground mt-2">
                         Qty sold: <span className="font-medium text-foreground">{item.quantity}</span>
                       </p>

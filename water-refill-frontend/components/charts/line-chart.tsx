@@ -25,7 +25,7 @@ export function LineChart({
   data,
   dataKey,
   xAxisKey,
-  color = "#0056e0",
+  color = "hsl(var(--primary))",
 }: LineChartProps) {
   return (
     <Card className="glass-card">

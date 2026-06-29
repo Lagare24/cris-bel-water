@@ -74,7 +74,7 @@ export default function DashboardPage() {
       icon: Plus,
       title: "Create New Sale",
       description: "Record a new transaction",
-      bgColor: "#0044ad",
+      iconClass: "bg-primary/12 text-primary",
       hoverColor: "hover:border-primary",
     },
     {
@@ -82,7 +82,7 @@ export default function DashboardPage() {
       icon: FileText,
       title: "View Reports",
       description: "Sales and analytics insights",
-      bgColor: "#475569",
+      iconClass: "bg-slate-500/15 text-slate-700 dark:text-slate-300",
       hoverColor: "hover:border-slate-500",
     },
     {
@@ -90,7 +90,7 @@ export default function DashboardPage() {
       icon: UserPlus,
       title: "Manage Clients",
       description: "View and manage accounts",
-      bgColor: "#64748b",
+      iconClass: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",
       hoverColor: "hover:border-slate-400",
     },
     {
@@ -98,7 +98,7 @@ export default function DashboardPage() {
       icon: PackagePlus,
       title: "Manage Products",
       description: "Inventory and pricing",
-      bgColor: "#78716c",
+      iconClass: "bg-stone-500/15 text-stone-700 dark:text-stone-300",
       hoverColor: "hover:border-stone-500",
     },
   ];
@@ -153,18 +153,16 @@ export default function DashboardPage() {
                   <Link
                     key={action.href}
                     href={action.href}
-                    className={`group glass-card p-8 rounded-xl hover:shadow-2xl transition-all duration-300 border-2 border-transparent ${action.hoverColor} hover:scale-[1.02] cursor-pointer`}
+                    className={`group glass-card p-6 rounded-xl border transition-colors ${action.hoverColor} hover:bg-muted/35 cursor-pointer`}
                   >
                     <div className="flex items-center space-x-4">
                       <div
-                        className="p-4 rounded-xl group-hover:scale-110 transition-transform shadow-lg relative overflow-hidden"
-                        style={{ backgroundColor: action.bgColor }}
+                        className={`p-3 rounded-lg ${action.iconClass}`}
                       >
-                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <Icon className="w-8 h-8 text-white drop-shadow-lg relative z-10" />
+                        <Icon className="w-6 h-6" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
+                        <h2 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
                           {action.title}
                         </h2>
                         <p className="text-muted-foreground">

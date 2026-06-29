@@ -18,7 +18,13 @@ interface PieChartProps {
   colors?: string[];
 }
 
-const DEFAULT_COLORS = ["#0056e0", "#00e6c3", "#8b5cf6", "#f59e0b", "#10b981"];
+const DEFAULT_COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--accent))",
+  "hsl(var(--secondary-foreground))",
+  "hsl(var(--muted-foreground))",
+  "hsl(var(--destructive))",
+];
 
 export function PieChart({
   title,

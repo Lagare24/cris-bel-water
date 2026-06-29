@@ -17,7 +17,7 @@ namespace WaterRefill.Api.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -188,6 +188,12 @@ namespace WaterRefill.Api.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<int>("MaxStock")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinStock")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()

@@ -1,0 +1,6 @@
+{
+  "buildCommand": "dotnet build --configuration Release",
+  "outputDirectory": "bin/Release/net9.0/publish",
+  "framework": "dotnet",
+  "runtime": "dotnet9.x"
+}

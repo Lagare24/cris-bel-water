@@ -2,6 +2,18 @@
 
 @layer base {
   :root {
+    --brand-primary-light: 217 100% 36%;
+    --brand-accent-light: 186 90% 42%;
+    --brand-ring-light: 217 100% 36%;
+    --brand-surface-light: 218 86% 34%;
+    --brand-on-surface-light: 0 0% 100%;
+
+    --brand-primary-dark: 213 100% 64%;
+    --brand-accent-dark: 184 85% 58%;
+    --brand-ring-dark: 213 100% 64%;
+    --brand-surface-dark: 220 62% 21%;
+    --brand-on-surface-dark: 210 40% 98%;
+
     --background: 220 30% 98%;
     --foreground: 222 47% 11%;
 
@@ -11,8 +23,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 100% 34%;
-    /* Navy #0044ad */
+    --primary: var(--brand-primary-light);
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
@@ -21,8 +32,7 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 174 100% 45%;
-    /* Teal #00e6c3 */
+    --accent: var(--brand-accent-light);
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84% 60%;
@@ -30,7 +40,9 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 217 100% 34%;
+    --ring: var(--brand-ring-light);
+    --brand-surface: var(--brand-surface-light);
+    --brand-on-surface: var(--brand-on-surface-light);
 
     --radius: 0.75rem;
   }
@@ -45,8 +57,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 100% 55%;
-    /* Lighter navy for dark mode #1a75ff */
+    --primary: var(--brand-primary-dark);
     --primary-foreground: 0 0% 100%;
 
     --secondary: 217 32% 17%;
@@ -55,8 +66,7 @@
     --muted: 217 32% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 174 100% 55%;
-    /* Lighter teal for dark mode */
+    --accent: var(--brand-accent-dark);
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 50%;
@@ -64,7 +74,9 @@
 
     --border: 217 32% 17%;
     --input: 217 32% 17%;
-    --ring: 217 100% 55%;
+    --ring: var(--brand-ring-dark);
+    --brand-surface: var(--brand-surface-dark);
+    --brand-on-surface: var(--brand-on-surface-dark);
   }
 }
 
@@ -76,9 +88,13 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    background-image:
+      radial-gradient(circle at 8% 0%, hsl(var(--primary) / 0.14), transparent 34%),
+      radial-gradient(circle at 92% 0%, hsl(var(--accent) / 0.12), transparent 30%);
+    background-attachment: fixed;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    font-family: "Space Grotesk", "Segoe UI Variable", "Segoe UI", sans-serif;
+    transition: background-color 0.35s ease, color 0.35s ease;
   }
 
   html {
@@ -160,19 +176,24 @@
 /* Minimalist card and navigation styles */
 @layer utilities {
   .glass {
-    @apply bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border;
+    @apply bg-white dark:bg-slate-900 border;
   }
 
   .glass-dark {
-    @apply bg-black/95 dark:bg-slate-900/95 backdrop-blur-sm border;
+    @apply bg-black dark:bg-slate-900 border;
   }
 
   .glass-card {
-    @apply bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-600 shadow-md;
+    @apply bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700;
   }
 
   .glass-nav {
     @apply bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-600;
+  }
+
+  .brand-surface {
+    background-color: hsl(var(--brand-surface));
+    color: hsl(var(--brand-on-surface));
   }
 
   /* Cursor utilities */
@@ -219,7 +240,7 @@
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #1a75ff #b3d1ff;
+    scrollbar-color: hsl(var(--primary)) hsl(var(--secondary));
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -228,23 +249,15 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
-    background-color: #b3d1ff;
-  }
-
-  .dark .scrollbar-thin::-webkit-scrollbar-track {
-    background-color: #001229;
+    background-color: hsl(var(--secondary));
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #1a75ff;
+    background-color: hsl(var(--primary));
     border-radius: 9999px;
   }
 
-  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #0044ad;
-  }
-
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #0056e0;
+    background-color: hsl(var(--accent));
   }
 }

@@ -80,7 +80,7 @@ export function CurrencySelector() {
       <div className="flex items-center gap-2">
         {/* Currency Toggle */}
         <Select value={currency} onValueChange={handleCurrencyChange}>
-          <SelectTrigger className="w-[100px] bg-white/10 border-white/20 text-white hover:bg-white/20 transition-all">
+          <SelectTrigger className="w-24 border-[hsl(var(--brand-on-surface)/0.28)] bg-[hsl(var(--brand-on-surface)/0.14)] text-[hsl(var(--brand-on-surface))] hover:bg-[hsl(var(--brand-on-surface)/0.22)] transition-all">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="glass-card">
@@ -97,7 +97,7 @@ export function CurrencySelector() {
             setTempRate(exchangeRate.toString());
             setShowSettings(true);
           }}
-          className="bg-white/10 hover:bg-white/20 text-white transition-all"
+          className="border border-[hsl(var(--brand-on-surface)/0.28)] bg-[hsl(var(--brand-on-surface)/0.14)] text-[hsl(var(--brand-on-surface))] hover:bg-[hsl(var(--brand-on-surface)/0.22)] transition-all"
           title="Currency Settings"
         >
           <Settings className="h-4 w-4" />
@@ -106,7 +106,7 @@ export function CurrencySelector() {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="glass-card sm:max-w-[425px]">
+        <DialogContent className="glass-card sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-primary" />

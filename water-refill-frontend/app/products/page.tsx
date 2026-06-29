@@ -42,8 +42,12 @@ interface Product {
   description: string;
   price: number;
   quantity: number;
+  minStock: number;
+  maxStock: number;
   isActive: boolean;
 }
+
+type StockStatus = "critical" | "low" | "healthy" | "overstock";
 
 export default function ProductsPage() {
   const { convertAmount, formatCurrency } = useCurrency();
@@ -62,6 +66,8 @@ export default function ProductsPage() {
     description: "",
     price: "",
     quantity: "",
+    minStock: "10",
+    maxStock: "50",
   });
   const [error, setError] = useState("");
 
@@ -96,12 +102,8 @@ export default function ProductsPage() {
     }
 
     // Stock level filter
-    if (stockLevelFilter === "low") {
-      filtered = filtered.filter((product) => product.quantity < 10);
-    } else if (stockLevelFilter === "medium") {
-      filtered = filtered.filter((product) => product.quantity >= 10 && product.quantity < 50);
-    } else if (stockLevelFilter === "high") {
-      filtered = filtered.filter((product) => product.quantity >= 50);
+    if (stockLevelFilter !== "all") {
+      filtered = filtered.filter((product) => getStockStatus(product) === stockLevelFilter);
     }
 
     setFilteredProducts(filtered);
@@ -120,10 +122,12 @@ export default function ProductsPage() {
         description: product.description,
         price: product.price.toString(),
         quantity: product.quantity.toString(),
+        minStock: product.minStock.toString(),
+        maxStock: product.maxStock.toString(),
       });
     } else {
       setEditingProduct(null);
-      setFormData({ name: "", description: "", price: "", quantity: "" });
+      setFormData({ name: "", description: "", price: "", quantity: "", minStock: "10", maxStock: "50" });
     }
     setShowDialog(true);
     setError("");
@@ -132,7 +136,7 @@ export default function ProductsPage() {
   const handleCloseDialog = () => {
     setShowDialog(false);
     setEditingProduct(null);
-    setFormData({ name: "", description: "", price: "", quantity: "" });
+    setFormData({ name: "", description: "", price: "", quantity: "", minStock: "10", maxStock: "50" });
     setError("");
   };
 
@@ -140,11 +144,36 @@ export default function ProductsPage() {
     e.preventDefault();
     setError("");
 
+    const minStock = parseInt(formData.minStock);
+    const maxStock = parseInt(formData.maxStock);
+    if (isNaN(minStock) || minStock < 0) {
+      const message = "Minimum stock must be 0 or higher";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+
+    if (isNaN(maxStock) || maxStock < 0) {
+      const message = "Maximum stock must be 0 or higher";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+
+    if (maxStock < minStock) {
+      const message = "Maximum stock must be greater than or equal to minimum stock";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+
     const payload = {
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
       quantity: parseInt(formData.quantity),
+      minStock,
+      maxStock,
     };
 
     try {
@@ -195,24 +224,39 @@ export default function ProductsPage() {
     }
   };
 
-  const getStockBadge = (quantity: number) => {
-    if (quantity < 10) {
+  const getStockStatus = (product: Product): StockStatus => {
+    if (product.quantity <= 0) return "critical";
+    if (product.quantity < product.minStock) return "low";
+    if (product.quantity > product.maxStock) return "overstock";
+    return "healthy";
+  };
+
+  const getStockBadge = (product: Product) => {
+    const status = getStockStatus(product);
+
+    if (status === "critical") {
       return (
         <Badge variant="destructive" className="gap-1">
           <AlertCircle className="h-3 w-3" />
-          Low Stock
+          Critical
         </Badge>
       );
-    } else if (quantity < 50) {
-      return (
-        <Badge className="bg-yellow-500 hover:bg-yellow-600 gap-1">
-          <AlertCircle className="h-3 w-3" />
-          Medium
-        </Badge>
-      );
-    } else {
-      return <Badge className="bg-green-500 hover:bg-green-600">In Stock</Badge>;
     }
+
+    if (status === "low") {
+      return (
+        <Badge className="bg-amber-500 hover:bg-amber-600 gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Low
+        </Badge>
+      );
+    }
+
+    if (status === "overstock") {
+      return <Badge className="bg-blue-500 hover:bg-blue-600">Overstock</Badge>;
+    }
+
+    return <Badge className="bg-green-600 hover:bg-green-700">Healthy</Badge>;
   };
 
   const columns: ColumnDef<Product>[] = [
@@ -292,12 +336,24 @@ export default function ProductsPage() {
         <DataTableColumnHeader column={column} title="Stock" />
       ),
       cell: ({ row }) => {
-        const quantity = row.getValue("quantity") as number;
+        const product = row.original;
         return (
           <div className="flex items-center gap-2">
-            <span className="font-medium">{quantity}</span>
-            {getStockBadge(quantity)}
+            <span className="font-medium">{product.quantity}</span>
+            {getStockBadge(product)}
           </div>
+        );
+      },
+    },
+    {
+      id: "thresholds",
+      header: "Thresholds",
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <span className="text-sm text-muted-foreground">
+            Min {product.minStock} / Max {product.maxStock}
+          </span>
         );
       },
     },
@@ -393,9 +449,10 @@ export default function ProductsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Levels</SelectItem>
-                      <SelectItem value="low">Low Stock (&lt; 10)</SelectItem>
-                      <SelectItem value="medium">Medium Stock (10-49)</SelectItem>
-                      <SelectItem value="high">In Stock (≥ 50)</SelectItem>
+                      <SelectItem value="critical">Critical (0)</SelectItem>
+                      <SelectItem value="low">Low (Below Min)</SelectItem>
+                      <SelectItem value="healthy">Healthy (Between Min/Max)</SelectItem>
+                      <SelectItem value="overstock">Overstock (Above Max)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -426,7 +483,7 @@ export default function ProductsPage() {
 
         {/* Add/Edit Dialog */}
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="glass-card sm:max-w-[500px]">
+          <DialogContent className="glass-card sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>
                 {editingProduct ? "Edit Product" : "Add New Product"}
@@ -489,6 +546,36 @@ export default function ProductsPage() {
                     value={formData.quantity}
                     onChange={(e) =>
                       setFormData({ ...formData, quantity: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minStock">Minimum Stock *</Label>
+                  <Input
+                    id="minStock"
+                    type="number"
+                    min="0"
+                    value={formData.minStock}
+                    onChange={(e) =>
+                      setFormData({ ...formData, minStock: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="maxStock">Maximum Stock *</Label>
+                  <Input
+                    id="maxStock"
+                    type="number"
+                    min="0"
+                    value={formData.maxStock}
+                    onChange={(e) =>
+                      setFormData({ ...formData, maxStock: e.target.value })
                     }
                     required
                   />

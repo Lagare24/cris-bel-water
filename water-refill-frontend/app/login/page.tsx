@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Droplet, Loader2 } from "lucide-react";
 import api from "@/lib/api";
+import { PRODUCT_BRAND_NAME, PRODUCT_TAGLINE } from "@/lib/branding";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -69,23 +70,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="glass-card rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+        <div className="glass-card rounded-xl overflow-hidden border">
           {/* Header Section */}
-          <div className="p-8 text-center relative overflow-hidden" style={{ backgroundColor: '#0044ad' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
-            <div className="relative">
-              <div className="w-20 h-20 bg-white/90 dark:bg-white/10 backdrop-blur-sm rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-                <Droplet className="w-12 h-12 text-primary dark:text-white" />
+          <div className="p-8 text-center border-b" style={{ backgroundColor: "hsl(var(--brand-surface))", color: "hsl(var(--brand-on-surface))" }}>
+            <div>
+              <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center bg-[hsl(var(--brand-on-surface)/0.15)]">
+                <Droplet className="w-8 h-8 text-[hsl(var(--brand-on-surface))]" />
               </div>
-              <h1 className="text-3xl font-bold text-white drop-shadow-lg">
-                Water Refilling
+              <h1 className="text-2xl font-semibold text-[hsl(var(--brand-on-surface))]">
+                {PRODUCT_BRAND_NAME}
               </h1>
-              <p className="text-white/80 mt-2 font-medium">Management System</p>
+              <p className="text-[hsl(var(--brand-on-surface)/0.84)] mt-2 font-medium">{PRODUCT_TAGLINE}</p>
             </div>
           </div>
 
           {/* Form Section */}
-          <form onSubmit={handleLogin} className="p-8 space-y-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+          <form onSubmit={handleLogin} className="p-8 space-y-6 bg-card">
             <div className="space-y-2">
               <Label htmlFor="username" className="text-sm font-semibold">
                 Username
@@ -125,7 +125,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-11 font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full h-11 font-semibold"
             >
               {loading ? (
                 <span className="flex items-center justify-center">

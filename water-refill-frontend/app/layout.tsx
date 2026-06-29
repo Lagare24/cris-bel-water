@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CurrencyProvider } from "@/lib/currency-context";
+import { PRODUCT_BRAND_NAME, PRODUCT_TAGLINE } from "@/lib/branding";
 import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Water Refilling Station - Management System",
+  title: `${PRODUCT_BRAND_NAME} - ${PRODUCT_TAGLINE}`,
   description: "Manage users, clients, products, sales, and generate reports",
 };
 
@@ -25,7 +26,8 @@ export default function RootLayout({
         >
           <CurrencyProvider>
             {children}
-            <Toaster position="top-right" richColors />
+            {/* Global toast behavior for all screens: close button + visible timed lifetime. */}
+            <Toaster position="top-right" richColors closeButton duration={5000} />
           </CurrencyProvider>
         </ThemeProvider>
       </body>

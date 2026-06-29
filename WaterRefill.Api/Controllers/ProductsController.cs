@@ -51,6 +51,8 @@ namespace WaterRefill.Api.Controllers
                     Description = p.Description,
                     Price = p.Price,
                     Quantity = p.Quantity,
+                    MinStock = p.MinStock,
+                    MaxStock = p.MaxStock,
                     IsActive = p.IsActive
                 }).ToList();
 
@@ -83,6 +85,8 @@ namespace WaterRefill.Api.Controllers
                     Description = product.Description,
                     Price = product.Price,
                     Quantity = product.Quantity,
+                    MinStock = product.MinStock,
+                    MaxStock = product.MaxStock,
                     IsActive = product.IsActive
                 };
 
@@ -127,6 +131,12 @@ namespace WaterRefill.Api.Controllers
             if (dto.Price is null) errors.Add("Price is required");
             if (dto.Price is not null && dto.Price < 0) errors.Add("Price must be greater than or equal to 0");
             if (dto.Quantity is not null && dto.Quantity < 0) errors.Add("Quantity must be greater than or equal to 0");
+            if (dto.MinStock is not null && dto.MinStock < 0) errors.Add("Minimum stock must be greater than or equal to 0");
+            if (dto.MaxStock is not null && dto.MaxStock < 0) errors.Add("Maximum stock must be greater than or equal to 0");
+
+            var createMinStock = dto.MinStock ?? 10;
+            var createMaxStock = dto.MaxStock ?? 50;
+            if (createMaxStock < createMinStock) errors.Add("Maximum stock must be greater than or equal to minimum stock");
 
             if (errors.Count > 0)
             {
@@ -141,6 +151,8 @@ namespace WaterRefill.Api.Controllers
                     Description = dto.Description?.Trim() ?? string.Empty,
                     Price = dto.Price!.Value,
                     Quantity = dto.Quantity ?? 0,
+                    MinStock = createMinStock,
+                    MaxStock = createMaxStock,
                     IsActive = true
                 };
 
@@ -154,6 +166,8 @@ namespace WaterRefill.Api.Controllers
                     Description = product.Description,
                     Price = product.Price,
                     Quantity = product.Quantity,
+                    MinStock = product.MinStock,
+                    MaxStock = product.MaxStock,
                     IsActive = product.IsActive
                 };
 
@@ -176,7 +190,7 @@ namespace WaterRefill.Api.Controllers
                 return BadRequest(new { message = "Product data is required" });
             }
 
-            if (string.IsNullOrWhiteSpace(dto.Name) && dto.Description == null && dto.Price is null && dto.Quantity is null && dto.IsActive is null)
+            if (string.IsNullOrWhiteSpace(dto.Name) && dto.Description == null && dto.Price is null && dto.Quantity is null && dto.MinStock is null && dto.MaxStock is null && dto.IsActive is null)
             {
                 return BadRequest(new { message = "At least one field must be provided for update" });
             }
@@ -189,6 +203,16 @@ namespace WaterRefill.Api.Controllers
             if (dto.Quantity is not null && dto.Quantity < 0)
             {
                 return BadRequest(new { message = "Quantity must be greater than or equal to 0" });
+            }
+
+            if (dto.MinStock is not null && dto.MinStock < 0)
+            {
+                return BadRequest(new { message = "Minimum stock must be greater than or equal to 0" });
+            }
+
+            if (dto.MaxStock is not null && dto.MaxStock < 0)
+            {
+                return BadRequest(new { message = "Maximum stock must be greater than or equal to 0" });
             }
 
             try
@@ -217,6 +241,23 @@ namespace WaterRefill.Api.Controllers
                 if (dto.Quantity is not null)
                 {
                     product.Quantity = dto.Quantity.Value;
+                }
+
+                var effectiveMinStock = dto.MinStock ?? product.MinStock;
+                var effectiveMaxStock = dto.MaxStock ?? product.MaxStock;
+                if (effectiveMaxStock < effectiveMinStock)
+                {
+                    return BadRequest(new { message = "Maximum stock must be greater than or equal to minimum stock" });
+                }
+
+                if (dto.MinStock is not null)
+                {
+                    product.MinStock = dto.MinStock.Value;
+                }
+
+                if (dto.MaxStock is not null)
+                {
+                    product.MaxStock = dto.MaxStock.Value;
                 }
 
                 if (dto.IsActive is not null)
@@ -311,6 +352,8 @@ namespace WaterRefill.Api.Controllers
         public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public int Quantity { get; set; }
+        public int MinStock { get; set; }
+        public int MaxStock { get; set; }
         public bool IsActive { get; set; }
     }
 
@@ -320,6 +363,8 @@ namespace WaterRefill.Api.Controllers
         public string? Description { get; set; }
         public decimal? Price { get; set; }
         public int? Quantity { get; set; }
+        public int? MinStock { get; set; }
+        public int? MaxStock { get; set; }
     }
 
     public class UpdateProductDto
@@ -328,6 +373,8 @@ namespace WaterRefill.Api.Controllers
         public string? Description { get; set; }
         public decimal? Price { get; set; }
         public int? Quantity { get; set; }
+        public int? MinStock { get; set; }
+        public int? MaxStock { get; set; }
         public bool? IsActive { get; set; }
     }
 }
